@@ -1,0 +1,202 @@
+@import 'tailwindcss';
+
+/* intuService marketing site — a deliberately single, committed dark/
+   atmospheric identity (like the Numa reference), not a light/dark toggle. */
+:root {
+  --ground: #0b0a12;
+  --ground-soft: #14101f;
+  --twilight-1: #241a3f;
+  --twilight-2: #120d22;
+
+  --ink: #f4f2fb;
+  --ink-dim: #b9b3cc;
+  --ink-faint: #726c8c;
+
+  --violet: #7c3aed;
+  --violet-soft: #a78bfa;
+  --violet-bg: rgba(124, 58, 237, 0.16);
+
+  --amber: #ffb100;
+  --amber-soft: #ffcf66;
+  --amber-bg: rgba(255, 177, 0, 0.14);
+
+  --magenta: #ec4899;
+  --magenta-soft: #f9a8d4;
+  --magenta-bg: rgba(236, 72, 153, 0.15);
+
+  --teal: #22d3ee;
+  --teal-soft: #7dd3fc;
+  --teal-bg: rgba(34, 211, 238, 0.14);
+
+  --coral: #ff6b4a;
+  --coral-soft: #ff9478;
+  --coral-bg: rgba(255, 107, 74, 0.15);
+
+  --good: #34d399;
+
+  --line: rgba(244, 242, 251, 0.1);
+  --line-strong: rgba(244, 242, 251, 0.2);
+  --surface: rgba(244, 242, 251, 0.045);
+  --surface-hover: rgba(244, 242, 251, 0.08);
+
+  --radius: 20px;
+  --radius-sm: 12px;
+
+  --font-body: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  --font-data: var(--font-mono), ui-monospace, monospace;
+  --font-logo: var(--font-wordmark), var(--font-display), ui-sans-serif, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  background: var(--ground);
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  /* Dotted grid, tiled the length of the whole document (background-image
+     scrolls with the page by default, unlike a fixed overlay) — a faint
+     technical texture sitting behind every section. Individual sections with
+     their own background must stay transparent/semi-transparent for it to
+     show through (see how-it-works.tsx, faq.tsx, footer.tsx). */
+  background-color: var(--ground);
+  background-image: radial-gradient(circle, rgba(244, 242, 251, 0.09) 1.4px, transparent 1.5px);
+  background-size: 26px 26px;
+  color: var(--ink);
+  font-family: var(--font-body);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+}
+
+::selection {
+  background: var(--violet);
+  color: white;
+}
+
+.eyebrow {
+  font-family: var(--font-data);
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  background: linear-gradient(90deg, var(--teal-soft), var(--violet-soft));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+}
+
+.tag {
+  font-family: var(--font-data);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--violet-soft);
+  border: 1px solid var(--line);
+  background: var(--violet-bg);
+  border-radius: 999px;
+  padding: 4px 10px;
+  display: inline-block;
+}
+
+/* scroll-reveal (see components/reveal.tsx) */
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 0.6s ease,
+    transform 0.6s ease;
+}
+.reveal.in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@keyframes drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(-2%, -3%, 0) scale(1.04);
+  }
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.45);
+  }
+  50% {
+    opacity: 0.55;
+    box-shadow: 0 0 0 6px rgba(52, 211, 153, 0);
+  }
+}
+
+@keyframes ticket-cycle {
+  0%,
+  6% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  12%,
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes stamp-cycle {
+  0%,
+  70% {
+    opacity: 0;
+    transform: scale(1.6) rotate(-8deg);
+  }
+  80%,
+  96% {
+    opacity: 1;
+    transform: scale(1) rotate(-8deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1) rotate(-8deg);
+  }
+}
+
+@keyframes eq-bar {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

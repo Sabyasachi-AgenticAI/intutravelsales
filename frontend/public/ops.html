@@ -1,0 +1,1313 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>intuService Ops — Demo</title>
+<style>
+  /* ---------- tokens ---------- */
+  :root {
+    --page: #f7f5f0;
+    --card: #fdfcf9;
+    --line: #e6e2d7;
+    --line-soft: #efece3;
+    --ink: #171511;
+    --ink-2: #57534a;
+    --ink-3: #8a867a;
+    --accent: #eda100;          /* validated amber, light */
+    --accent-ink-on: #231a00;
+    --accent-track: #f3e2b6;
+    --ctx: #cfccc2;             /* de-emphasis series */
+    --blue: #2a78d6;            /* validated blue, light */
+    --good-text: #006300;
+    --good: #0ca30c;
+    --critical: #d03b3b;
+    --wash: rgba(23, 21, 17, 0.04);
+    --ring: var(--card);
+    --sans: system-ui, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "Cascadia Code", Consolas, "SF Mono", monospace;
+    --shadow: 0 1px 2px rgba(23, 21, 17, 0.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --page: #141311; --card: #1f1e1b; --line: #35332c; --line-soft: #2a2924;
+      --ink: #f4f2ec; --ink-2: #b5b1a4; --ink-3: #8a867a;
+      --accent: #c98500; --accent-ink-on: #1c1400; --accent-track: #453611;
+      --ctx: #45433c; --blue: #3987e5; --good-text: #0ca30c;
+      --wash: rgba(244, 242, 236, 0.05); --ring: var(--card);
+      --shadow: none;
+    }
+  }
+  :root[data-theme="dark"] {
+    --page: #141311; --card: #1f1e1b; --line: #35332c; --line-soft: #2a2924;
+    --ink: #f4f2ec; --ink-2: #b5b1a4; --ink-3: #8a867a;
+    --accent: #c98500; --accent-ink-on: #1c1400; --accent-track: #453611;
+    --ctx: #45433c; --blue: #3987e5; --good-text: #0ca30c;
+    --wash: rgba(244, 242, 236, 0.05); --ring: var(--card);
+    --shadow: none;
+  }
+  :root[data-theme="light"] {
+    --page: #f7f5f0; --card: #fdfcf9; --line: #e6e2d7; --line-soft: #efece3;
+    --ink: #171511; --ink-2: #57534a; --ink-3: #8a867a;
+    --accent: #eda100; --accent-ink-on: #231a00; --accent-track: #f3e2b6;
+    --ctx: #cfccc2; --blue: #2a78d6; --good-text: #006300;
+    --wash: rgba(23, 21, 17, 0.04); --ring: var(--card);
+    --shadow: 0 1px 2px rgba(23, 21, 17, 0.05);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--page); color: var(--ink);
+    font-family: var(--sans); font-size: 14px; line-height: 1.45;
+    padding: 20px clamp(14px, 3vw, 36px) 40px;
+  }
+  button { font: inherit; color: inherit; }
+
+  .eyebrow {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.09em;
+    text-transform: uppercase; color: var(--ink-3);
+  }
+
+  /* ---------- header ---------- */
+  header {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 18px;
+    padding-bottom: 14px;
+  }
+  .wordmark { font-size: 19px; font-weight: 800; letter-spacing: -0.01em; }
+  .wordmark .ops {
+    background: var(--accent); color: var(--accent-ink-on);
+    font-size: 11px; font-weight: 800; letter-spacing: 0.08em;
+    border-radius: 4px; padding: 2px 6px; margin-left: 6px; vertical-align: 2px;
+  }
+  .context { color: var(--ink-2); font-size: 13px; }
+  .header-right {
+    margin-left: auto; display: flex; align-items: center; gap: 14px;
+    font-family: var(--mono); font-size: 13px; color: var(--ink-2);
+  }
+  .live {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--sans); font-size: 11px; font-weight: 700;
+    letter-spacing: 0.08em; color: var(--good-text);
+  }
+  .live-dot {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--good);
+    animation: pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.35 } }
+
+  /* ---------- filter row ---------- */
+  .filters {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 0 18px; border-top: 1px solid var(--line);
+  }
+  .range-btn {
+    background: none; border: 1px solid var(--line); border-radius: 7px;
+    padding: 5px 12px; cursor: pointer; color: var(--ink-2); font-size: 13px;
+  }
+  .range-btn:hover { background: var(--wash); }
+  .range-btn[aria-pressed="true"] {
+    background: var(--accent); border-color: var(--accent);
+    color: var(--accent-ink-on); font-weight: 700;
+  }
+  .range-btn:focus-visible, .toggle:focus-visible {
+    outline: 2px solid var(--blue); outline-offset: 2px;
+  }
+  .filters .scope-note { color: var(--ink-3); font-size: 12px; margin-left: 6px; }
+
+  /* ---------- KPI band ---------- */
+  .kpis {
+    display: grid; gap: 12px;
+    grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr;
+    margin-bottom: 14px;
+  }
+  .tile {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px 12px; box-shadow: var(--shadow);
+    display: flex; flex-direction: column; gap: 4px; min-width: 0;
+  }
+  .tile .label { font-size: 12px; font-weight: 600; color: var(--ink-2); }
+  .tile .value { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
+  .tile.hero .value { font-size: 44px; }
+  .tile .sub { font-size: 12px; color: var(--ink-3); }
+  .tile .delta { font-size: 12px; font-weight: 700; color: var(--good-text); }
+  .tile .delta .vs { font-weight: 400; color: var(--ink-3); }
+  .tile .spark { margin-top: auto; padding-top: 6px; }
+  .bump { animation: bump 0.6s ease; }
+  @keyframes bump { 0% { color: var(--good-text) } 100% { color: inherit } }
+
+  /* ---------- main grid ---------- */
+  .grid {
+    display: grid; gap: 12px;
+    grid-template-columns: repeat(12, 1fr);
+    grid-template-areas:
+      "vol vol vol vol vol vol vol vol feed feed feed feed"
+      "ups ups ups ups ups ups ups ups feed feed feed feed"
+      "con con con con stores stores stores stores stores stores stores stores";
+  }
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 16px 18px; box-shadow: var(--shadow); min-width: 0;
+  }
+  .card-vol { grid-area: vol; }
+  .card-ups { grid-area: ups; }
+  .card-con { grid-area: con; }
+  .card-feed { grid-area: feed; display: flex; flex-direction: column; }
+  .card-stores { grid-area: stores; }
+  .card h2 { font-size: 15px; font-weight: 700; margin: 0 0 2px; }
+  .card .desc { font-size: 12px; color: var(--ink-3); margin: 0 0 12px; }
+  .card-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .card-head .spacer { margin-left: auto; }
+
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--ink-2); }
+  .legend .key { display: inline-flex; align-items: center; gap: 6px; }
+  .swatch { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+  .sw-ctx { background: var(--ctx); }
+  .sw-acc { background: var(--accent); }
+  .sw-blue { background: var(--blue); }
+  .sw-crit { background: var(--critical); }
+
+  .chart-wrap { position: relative; }
+  .chart-wrap svg { display: block; width: 100%; height: auto; }
+
+  .seg-staffed { fill: var(--ctx); }
+  .seg-rec { fill: var(--accent); }
+  .grid-line { stroke: var(--line-soft); stroke-width: 1; }
+  .baseline { stroke: var(--line); stroke-width: 1; }
+  .tick-label { fill: var(--ink-3); font-size: 11px; font-family: var(--sans); }
+  .closed-wash { fill: var(--wash); }
+  .closed-label { fill: var(--ink-3); font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; }
+  .hit { fill: transparent; cursor: default; }
+  .col-hover .seg-staffed, .col-hover .seg-rec { filter: brightness(1.12); }
+
+  details.data-table { margin-top: 10px; }
+  details.data-table summary {
+    cursor: pointer; font-size: 12px; color: var(--ink-3); user-select: none;
+  }
+  details.data-table summary:hover { color: var(--ink-2); }
+  .table-scroll { overflow-x: auto; margin-top: 8px; }
+  table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+  th {
+    text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.05em;
+    text-transform: uppercase; color: var(--ink-3);
+    padding: 6px 10px 6px 0; border-bottom: 1px solid var(--line);
+  }
+  td { padding: 6px 10px 6px 0; border-bottom: 1px solid var(--line-soft); }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* ---------- upsell ---------- */
+  .ups-layout { display: grid; grid-template-columns: 200px 1fr; gap: 22px; }
+  .attach-block .rate { font-size: 40px; font-weight: 800; letter-spacing: -0.02em; }
+  .meter {
+    height: 10px; border-radius: 5px; background: var(--accent-track);
+    overflow: hidden; margin: 8px 0 6px;
+  }
+  .meter > div { height: 100%; background: var(--accent); border-radius: 5px 4px 4px 5px; }
+  .attach-block .sub { font-size: 12px; color: var(--ink-3); }
+  .attach-block .rev-line { margin-top: 14px; }
+  .attach-block .rev-line .v { font-size: 22px; font-weight: 800; }
+  .offers { display: flex; flex-direction: column; gap: 9px; }
+  .offer-row { display: grid; grid-template-columns: 168px 1fr 128px; gap: 10px; align-items: center; }
+  .offer-row .name { font-size: 12.5px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bullet { position: relative; height: 14px; }
+  .bullet .track { position: absolute; top: 0; bottom: 0; left: 0; background: var(--accent-track); border-radius: 4px; }
+  .bullet .fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent); border-radius: 4px 4px 4px 4px; }
+  .offer-row .nums {
+    font-size: 12px; color: var(--ink-2); text-align: right;
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+  }
+  .offer-row .nums strong { color: var(--ink); }
+
+  /* ---------- containment ---------- */
+  .stack { display: flex; gap: 2px; height: 18px; border-radius: 5px; overflow: hidden; margin: 14px 0 12px; }
+  .stack > div { min-width: 4px; }
+  .stack .s-ai { background: var(--accent); position: relative; }
+  .stack .s-ai span {
+    position: absolute; top: 0; right: 0; bottom: 0; left: 0;
+    display: flex; align-items: center; padding-left: 8px;
+    font-size: 11px; font-weight: 700; color: var(--accent-ink-on);
+  }
+  .stack .s-hu { background: var(--blue); }
+  .stack .s-sa { background: var(--critical); }
+  .con-rows { display: flex; flex-direction: column; gap: 7px; font-size: 13px; }
+  .con-row { display: flex; align-items: center; gap: 8px; }
+  .con-row .n { margin-left: auto; font-variant-numeric: tabular-nums; font-weight: 700; }
+  .con-row .pct { color: var(--ink-3); font-variant-numeric: tabular-nums; width: 52px; text-align: right; }
+  .safety-strip {
+    margin-top: 14px; padding: 10px 12px; border: 1px solid var(--line);
+    border-left: 3px solid var(--critical); border-radius: 6px;
+    font-size: 12.5px; color: var(--ink-2); background: var(--wash);
+  }
+  .safety-strip strong { color: var(--ink); }
+
+  /* ---------- live feed ---------- */
+  .feed-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .feed { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  .feed li {
+    padding: 9px 2px; border-bottom: 1px solid var(--line-soft);
+    display: flex; flex-direction: column; gap: 3px;
+  }
+  .feed li.row-in { animation: rowIn 0.45s ease; }
+  @keyframes rowIn { from { opacity: 0; transform: translateY(-4px) } to { opacity: 1; transform: none } }
+  .feed .meta {
+    display: flex; align-items: center; gap: 8px;
+    font-family: var(--mono); font-size: 11.5px; color: var(--ink-3);
+  }
+  .feed .txt { font-size: 12.5px; color: var(--ink-2); }
+  .feed .out { display: flex; align-items: center; gap: 8px; font-size: 12px; flex-wrap: wrap; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em;
+    border-radius: 4px; padding: 1.5px 7px; white-space: nowrap;
+  }
+  .chip-intent { border: 1px solid var(--line); color: var(--ink-2); background: none; }
+  .chip-good { background: var(--good); color: #fff; }
+  .chip-info { background: var(--blue); color: #fff; }
+  .chip-neutral { background: var(--wash); color: var(--ink-2); border: 1px solid var(--line); }
+  .chip-critical { background: var(--critical); color: #fff; }
+  .chip-upsell { background: var(--accent); color: var(--accent-ink-on); }
+  .out .val { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .out .dur { color: var(--ink-3); font-family: var(--mono); font-size: 11px; margin-left: auto; }
+
+  /* ---------- leaderboard ---------- */
+  .stores-scroll { overflow-x: auto; }
+  .rank { color: var(--ink-3); font-variant-numeric: tabular-nums; padding-right: 4px; }
+  .rev-cell { font-weight: 700; }
+  .attach-chip {
+    display: inline-block; background: var(--accent-track); color: var(--ink);
+    border-radius: 4px; padding: 0 6px; font-size: 11.5px; font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------- tooltip ---------- */
+  #tt {
+    position: fixed; z-index: 20; pointer-events: none; display: none;
+    background: var(--ink); color: var(--page);
+    border-radius: 6px; padding: 8px 10px; font-size: 12px; max-width: 240px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+  }
+  #tt .tt-title { font-weight: 700; margin-bottom: 3px; }
+  #tt .tt-row { display: flex; align-items: center; gap: 6px; }
+  #tt .tt-key { width: 10px; height: 3px; border-radius: 2px; display: inline-block; }
+  #tt .tt-val { font-weight: 700; margin-left: auto; padding-left: 12px; font-variant-numeric: tabular-nums; }
+
+  /* ---------- boot overlay ---------- */
+  #boot {
+    position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 50;
+    background: var(--page);
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .boot-card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 40px 44px; max-width: 430px; width: 100%; box-shadow: var(--shadow);
+    display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center;
+  }
+  .boot-sub { margin: 0; color: var(--ink-2); font-size: 13px; }
+  .boot-btn {
+    background: var(--accent); color: var(--accent-ink-on); border: none;
+    border-radius: 8px; padding: 13px 24px; font-size: 15px; font-weight: 800;
+    cursor: pointer; letter-spacing: 0.01em;
+  }
+  .boot-btn:hover { filter: brightness(1.06); }
+  .boot-btn:disabled { opacity: 0.55; cursor: default; }
+  .boot-btn:focus-visible, .boot-skip:focus-visible, .footer-link:focus-visible {
+    outline: 2px solid var(--blue); outline-offset: 2px;
+  }
+  .boot-steps { display: none; flex-direction: column; gap: 8px; align-items: flex-start; margin-top: 4px; }
+  .boot-step { display: flex; gap: 8px; font-size: 13px; color: var(--ink-2); animation: rowIn 0.35s ease; text-align: left; }
+  .bs-check { color: var(--good-text); font-weight: 800; }
+  .boot-skip, .footer-link {
+    background: none; border: none; color: var(--ink-3); font-size: 12px;
+    cursor: pointer; padding: 0;
+  }
+  .boot-skip:hover, .footer-link:hover { color: var(--ink-2); }
+
+  footer {
+    margin-top: 18px; font-size: 12px; color: var(--ink-3);
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .live-dot { animation: none; }
+    .feed li.row-in { animation: none; }
+    .bump { animation: none; }
+  }
+  @media (max-width: 1080px) {
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+    .tile.hero { grid-column: 1 / -1; }
+    .grid {
+      grid-template-areas: "vol" "ups" "con" "feed" "stores";
+      grid-template-columns: 1fr;
+    }
+    .ups-layout { grid-template-columns: 1fr; }
+    .offer-row { grid-template-columns: 120px 1fr 110px; }
+  }
+  @media (max-width: 560px) {
+    .tile .value { font-size: 26px; }
+    .tile.hero .value { font-size: 36px; }
+    .offer-row { grid-template-columns: 1fr auto; grid-template-rows: auto auto; row-gap: 4px; }
+    .offer-row .name { grid-column: 1; grid-row: 1; }
+    .offer-row .nums { grid-column: 2; grid-row: 1; }
+    .offer-row .bullet { grid-column: 1 / -1; grid-row: 2; }
+    .filters .scope-note { display: none; }
+    .card { padding: 14px; }
+  }
+</style>
+
+<div id="boot" role="dialog" aria-label="Initialize the intuService demo">
+  <div class="boot-card">
+    <div class="wordmark">intuService<span class="ops">OPS</span></div>
+    <p class="boot-sub">Downtown Auto Group — Philadelphia District · 8 stores</p>
+    <button id="boot-btn" class="boot-btn">Initialize intuService demo</button>
+    <div class="boot-steps" id="boot-steps" aria-live="polite"></div>
+    <button id="boot-skip" class="boot-skip">Skip intro</button>
+  </div>
+</div>
+
+<header>
+  <div>
+    <div class="wordmark">intuService<span class="ops">OPS</span></div>
+    <div class="context">AI Service Advisor · Downtown Auto Group — Philadelphia District · 8 stores · <strong>Pilot demo</strong></div>
+  </div>
+  <div class="header-right">
+    <span class="live"><span class="live-dot"></span>LIVE</span>
+    <span id="clock">--:--:--</span>
+  </div>
+</header>
+
+<div class="filters" role="group" aria-label="Date range">
+  <span class="eyebrow" style="margin-right:4px">Range</span>
+  <button class="range-btn" data-range="today" aria-pressed="true">Today</button>
+  <button class="range-btn" data-range="week" aria-pressed="false">Last 7 days</button>
+  <button class="range-btn" data-range="month" aria-pressed="false">Last 30 days</button>
+  <span class="scope-note">All figures below scope to the selected range</span>
+</div>
+
+<section class="kpis" aria-label="Key metrics">
+  <div class="tile hero">
+    <span class="label">Revenue captured</span>
+    <span class="value" id="k-revenue">—</span>
+    <span class="delta"><span id="k-revenue-d">—</span> <span class="vs" id="vs-1">vs yesterday</span></span>
+    <span class="sub" id="k-revenue-sub">—</span>
+    <span class="spark" id="sp-revenue"></span>
+  </div>
+  <div class="tile">
+    <span class="label">Calls answered</span>
+    <span class="value" id="k-answered">—</span>
+    <span class="delta"><span id="k-answered-d">—</span> <span class="vs" id="vs-2">vs yesterday</span></span>
+    <span class="sub">100% answer rate · 0.8 s avg pickup</span>
+    <span class="spark" id="sp-answered"></span>
+  </div>
+  <div class="tile">
+    <span class="label">Bookings converted</span>
+    <span class="value" id="k-bookings">—</span>
+    <span class="delta"><span id="k-bookings-d">—</span> <span class="vs" id="vs-3">vs yesterday</span></span>
+    <span class="sub" id="k-bookings-sub">—</span>
+    <span class="spark" id="sp-bookings"></span>
+  </div>
+  <div class="tile">
+    <span class="label">Missed-call recovery</span>
+    <span class="value" id="k-recovered">—</span>
+    <span class="delta"><span id="k-recovered-d">—</span> <span class="vs" id="vs-4">vs yesterday</span></span>
+    <span class="sub" id="k-recovered-sub">—</span>
+    <span class="spark" id="sp-recovered"></span>
+  </div>
+  <div class="tile">
+    <span class="label">Upsell revenue</span>
+    <span class="value" id="k-upsell">—</span>
+    <span class="delta"><span id="k-upsell-d">—</span> <span class="vs" id="vs-5">vs yesterday</span></span>
+    <span class="sub" id="k-upsell-sub">—</span>
+    <span class="spark" id="sp-upsell"></span>
+  </div>
+</section>
+
+<main class="grid">
+  <section class="card card-vol" aria-label="Call volume">
+    <div class="card-head">
+      <div>
+        <h2 id="vol-title">Call volume</h2>
+        <p class="desc" id="vol-desc">Every call answered — including the hours nobody was at the counter.</p>
+      </div>
+      <div class="spacer legend">
+        <span class="key"><span class="swatch sw-ctx"></span>Handled in store hours</span>
+        <span class="key"><span class="swatch sw-acc"></span>Recovered — after-hours &amp; overflow</span>
+      </div>
+    </div>
+    <div class="chart-wrap" id="vol-chart"></div>
+    <details class="data-table">
+      <summary>View data table</summary>
+      <div class="table-scroll" id="vol-table"></div>
+    </details>
+  </section>
+
+  <section class="card card-ups" aria-label="Upsell performance">
+    <div class="card-head">
+      <div>
+        <h2>Upsell performance</h2>
+        <p class="desc">Offers made only after the primary issue is handled — capped at one per call.</p>
+      </div>
+    </div>
+    <div class="ups-layout">
+      <div class="attach-block">
+        <span class="eyebrow">Attach rate</span>
+        <div class="rate" id="ups-rate">—</div>
+        <div class="meter"><div id="ups-meter" style="width:0%"></div></div>
+        <div class="sub" id="ups-counts">—</div>
+        <div class="rev-line">
+          <span class="eyebrow">Upsell revenue</span>
+          <div class="v" id="ups-rev">—</div>
+          <div class="sub" id="ups-avg">—</div>
+        </div>
+      </div>
+      <div>
+        <div class="offers" id="offers"></div>
+        <details class="data-table">
+          <summary>View data table</summary>
+          <div class="table-scroll" id="offers-table"></div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="card card-con" aria-label="Containment and escalation">
+    <div class="card-head">
+      <div>
+        <h2>Containment &amp; escalation</h2>
+        <p class="desc">Who finished the call — and proof the safety net fires when it should.</p>
+      </div>
+    </div>
+    <div class="stack" id="con-stack" role="img" aria-label="Containment breakdown"></div>
+    <div class="con-rows" id="con-rows"></div>
+    <div class="safety-strip" id="safety-strip">—</div>
+  </section>
+
+  <aside class="card card-feed" aria-label="Live call feed">
+    <div class="feed-head">
+      <h2 style="margin:0;font-size:15px">Live call feed</h2>
+      <span class="live" style="margin-left:auto"><span class="live-dot"></span></span>
+    </div>
+    <p class="desc" style="margin:0 0 8px">Real-time agent outcomes across the district.</p>
+    <ul class="feed" id="feed" role="log" aria-live="polite"></ul>
+  </aside>
+
+  <section class="card card-stores" aria-label="Store leaderboard">
+    <div class="card-head">
+      <div>
+        <h2>Store leaderboard</h2>
+        <p class="desc" id="stores-desc">Ranked by revenue captured in range.</p>
+      </div>
+    </div>
+    <div class="stores-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th></th><th>Store</th><th class="num">Calls</th><th class="num">Bookings</th>
+            <th class="num">Conversion</th><th class="num">Upsell attach</th><th class="num">Revenue</th>
+          </tr>
+        </thead>
+        <tbody id="stores-body"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <span>Seeded demonstration data — all figures illustrative.</span>
+  <span>·</span>
+  <span>Live feed simulates the production event stream.</span>
+  <span>·</span>
+  <span>intuService × Downtown Auto Group pilot concept.</span>
+  <span>·</span>
+  <button id="reset-demo" class="footer-link">Reset demo</button>
+</footer>
+
+<div id="tt" role="presentation"></div>
+
+<script>
+/* Theme sync when embedded in the intuService dashboard shell: honor a
+   ?theme=light|dark query param on load, and live updates via postMessage. */
+(function () {
+  function applyTheme(t) {
+    if (t === 'dark' || t === 'light') {
+      document.documentElement.setAttribute('data-theme', t);
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+  }
+  try {
+    var p = new URLSearchParams(window.location.search).get('theme');
+    if (p) { applyTheme(p); }
+  } catch (e) { /* no-op */ }
+  window.addEventListener('message', function (e) {
+    if (e.data && e.data.type === 'intuservice-theme') { applyTheme(e.data.theme); }
+  });
+})();
+</script>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ---------------- data ---------------- */
+
+  var HOUR_LABELS = ['12a','1a','2a','3a','4a','5a','6a','7a','8a','9a','10a','11a',
+                     '12p','1p','2p','3p','4p','5p','6p','7p','8p','9p','10p','11p'];
+
+  var OFFERS_TODAY = [
+    { name: 'PepCheck inspection', off: 88, acc: 24, rev: 1540, note: 'free check → found work' },
+    { name: 'Oil change + rotation bundle', off: 54, acc: 10, rev: 470, note: '' },
+    { name: 'Alignment with new tires', off: 26, acc: 5, rev: 690, note: '' },
+    { name: 'Battery test → replacement', off: 24, acc: 6, rev: 1020, note: '' },
+    { name: 'Wipers & cabin filter add-on', off: 22, acc: 7, rev: 290, note: '' }
+  ];
+
+  /* Illustrative service-center locations for the demo. */
+  var STORES_TODAY = [
+    ['Aramingo, Philadelphia', 58, 24, 57, 26, 7820],
+    ['Roosevelt Blvd, Philadelphia', 52, 21, 55, 25, 6940],
+    ['Glenolden, PA', 47, 18, 52, 24, 5870],
+    ['Cherry Hill, NJ', 44, 17, 54, 27, 5610],
+    ['Fairless Hills, PA', 39, 15, 51, 22, 4780],
+    ['Norristown, PA', 37, 14, 50, 23, 4420],
+    ['Wilmington, DE', 35, 12, 49, 21, 3980],
+    ['Brookhaven, PA', 30, 10, 48, 20, 2960]
+  ];
+
+  var SPARK = {
+    revenue:   [28.1, 30.4, 29.2, 31.8, 33.5, 32.1, 34.8, 36.2, 37.9, 39.4, 40.8, 42.4],
+    answered:  [281, 296, 288, 305, 312, 301, 318, 322, 330, 326, 335, 342],
+    bookings:  [104, 109, 106, 114, 118, 112, 121, 124, 126, 125, 129, 131],
+    recovered: [41, 44, 47, 45, 50, 52, 49, 54, 56, 58, 57, 61],
+    upsell:    [2.6, 2.8, 2.7, 3.0, 3.2, 3.1, 3.3, 3.5, 3.6, 3.7, 3.9, 4.0]
+  };
+
+  function scaleOffers(f) {
+    return OFFERS_TODAY.map(function (o) {
+      return { name: o.name, off: Math.round(o.off * f), acc: Math.round(o.acc * f * 0.97),
+               rev: Math.round(o.rev * f), note: o.note };
+    });
+  }
+  function scaleStores(f) {
+    return STORES_TODAY.map(function (s, i) {
+      return [s[0], Math.round(s[1] * f), Math.round(s[2] * f * 0.98),
+              s[3] - (i % 3), s[4] - (i % 2), Math.round(s[5] * f)];
+    });
+  }
+  function monthVolume() {
+    var staffed = [], rec = [], i, base;
+    for (i = 0; i < 30; i++) {
+      base = 240 + 55 * Math.sin(i / 4.5) + (i % 7 === 5 ? 70 : 0) + (i % 7 === 6 ? -55 : 0);
+      staffed.push(Math.max(120, Math.round(base)));
+      rec.push(Math.round(base * 0.18 + (i % 7 >= 5 ? 14 : 0)));
+    }
+    var sSum = staffed.reduce(function (a, b) { return a + b; }, 0);
+    var rSum = rec.reduce(function (a, b) { return a + b; }, 0);
+    staffed = staffed.map(function (v) { return Math.round(v * 8143 / sSum); });
+    rec = rec.map(function (v) { return Math.round(v * 1704 / rSum); });
+    var labels = [];
+    for (i = 0; i < 30; i++) { labels.push(String(i + 1)); }
+    return { labels: labels, staffed: staffed, recovered: rec,
+             xticks: [0, 4, 9, 14, 19, 24, 29], closed: [] };
+  }
+
+  var DATA = {
+    today: {
+      vsLabel: 'vs yesterday',
+      kpis: {
+        revenue:   { v: 42380, d: '+14%', sub: 'avg ticket $323 · 131 repair orders' },
+        answered:  { v: 342, d: '+12%' },
+        bookings:  { v: 131, d: '+9%', sub: '54% of booking-intent calls' },
+        recovered: { v: 61, d: '+22%', sub: '28 bookings · $8,940 that used to go to voicemail' },
+        upsell:    { d: '+6%' }
+      },
+      volume: {
+        labels: HOUR_LABELS,
+        staffed:   [0,0,0,0,0,0,0,0, 18,24,31,34, 28,26,29,27, 25,22,15,10, 0,0,0,0],
+        recovered: [3,2,1,2,1,3,5,8, 3,4,5,4, 3,3,4,3, 3,2,2,1, 6,5,4,3],
+        closed: [[0, 7], [20, 23]],
+        xticks: [0, 4, 8, 12, 16, 20, 23],
+        title: 'Hourly call volume — today',
+        desc: 'Shaded hours: stores closed, AI answering. Every one of those calls previously went to voicemail.'
+      },
+      offers: OFFERS_TODAY,
+      containment: { ai: 302, human: 38, safety: 2,
+        note: '<strong>2 safety escalations</strong> — smoke report, roadside at night · avg handoff <strong>7 s</strong> · 2 of 2 confirmed real emergencies' },
+      stores: STORES_TODAY,
+      sparkScale: 1
+    },
+    week: {
+      vsLabel: 'vs prior 7 days',
+      kpis: {
+        revenue:   { v: 284900, d: '+11%', sub: 'avg ticket $325 · 876 repair orders' },
+        answered:  { v: 2318, d: '+9%' },
+        bookings:  { v: 876, d: '+8%', sub: '52% of booking-intent calls' },
+        recovered: { v: 402, d: '+17%', sub: '187 bookings · $58,700 that used to go to voicemail' },
+        upsell:    { d: '+5%' }
+      },
+      volume: {
+        labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+        staffed:   [246, 258, 270, 285, 298, 330, 229],
+        recovered: [48, 52, 55, 61, 64, 72, 50],
+        closed: [], xticks: [0,1,2,3,4,5,6],
+        title: 'Daily call volume — last 7 days',
+        desc: 'After-hours and overflow calls recovered every single day, weekends most of all.'
+      },
+      offers: scaleOffers(6.8),
+      containment: { ai: 2046, human: 253, safety: 19,
+        note: '<strong>19 safety escalations</strong> this week · avg handoff <strong>8 s</strong> · 19 of 19 reached a human' },
+      stores: scaleStores(6.78),
+      sparkScale: 6.8
+    },
+    month: {
+      vsLabel: 'vs prior 30 days',
+      kpis: {
+        revenue:   { v: 1191000, d: '+13%', sub: 'avg ticket $322 · 3,692 repair orders' },
+        answered:  { v: 9847, d: '+10%' },
+        bookings:  { v: 3692, d: '+9%', sub: '51% of booking-intent calls' },
+        recovered: { v: 1704, d: '+19%', sub: '801 bookings · $246,000 that used to go to voicemail' },
+        upsell:    { d: '+7%' }
+      },
+      volume: (function () {
+        var m = monthVolume();
+        m.title = 'Daily call volume — last 30 days';
+        m.desc = 'Recovered calls are a steady fifth of volume — structural, not a novelty spike.';
+        return m;
+      })(),
+      offers: scaleOffers(28.6),
+      containment: { ai: 8662, human: 1132, safety: 53,
+        note: '<strong>53 safety escalations</strong> this month · avg handoff <strong>8 s</strong> · zero missed' },
+      stores: scaleStores(28.8),
+      sparkScale: 28.6
+    }
+  };
+
+  var FEED_POOL = [
+    { store: 'Cherry Hill', intent: 'Booking', text: 'Brake noise up front — Standard Brake Service', out: 'Booked', type: 'good', val: '$289', dur: '2:41' },
+    { store: 'Aramingo', intent: 'Diagnostic', text: 'Check engine, P0455 — loose gas cap likely, diag booked to confirm', out: 'Booked', type: 'good', val: '$59', dur: '3:04' },
+    { store: 'Glenolden', intent: 'Quote', text: 'Two tires + alignment, price match asked', out: 'Quoted', type: 'info', val: '$412', dur: '2:12', extra: 'SMS sent' },
+    { store: 'Roosevelt Blvd', intent: 'Recall check', text: '2019 Silverado — 1 open recall found, dealer referral + oil change kept', out: 'Booked', type: 'good', val: '$89', dur: '3:37' },
+    { store: 'Fairless Hills', intent: 'Booking', text: 'Platinum full synthetic oil change', out: 'Booked', type: 'good', val: '$124', dur: '1:58', upsell: 'rotation added' },
+    { store: 'Norristown', intent: 'Photo triage', text: 'Dash photo: battery warning light — test booked, replacement likely', out: 'Booked', type: 'good', val: 'est $189', dur: '2:26' },
+    { store: 'Wilmington', intent: 'Reschedule', text: 'Moved Tue 9:00a to Thu 4:00p', out: 'Confirmed', type: 'neutral', val: '', dur: '0:52', extra: 'SMS sent' },
+    { store: 'Cherry Hill', intent: 'Safety', text: '“Smoke coming from the hood” — scripted 911 guidance, warm transfer', out: 'Human handoff', type: 'critical', val: '', dur: '0:06' },
+    { store: 'Brookhaven', intent: 'Booking', text: 'State inspection, first opening tomorrow', out: 'Booked', type: 'good', val: '$39', dur: '1:44' },
+    { store: 'Aramingo', intent: 'Quote', text: 'Struts quote — caller comparing shops', out: 'Follow-up', type: 'neutral', val: '$684', dur: '2:58', extra: 'quote texted, callback set' },
+    { store: 'Glenolden', intent: 'Booking', text: 'A/C not cold — evac & recharge diagnostic', out: 'Booked', type: 'good', val: '$149', dur: '2:20', upsell: 'cabin filter added' },
+    { store: 'Roosevelt Blvd', intent: 'After-hours', text: '11:42p caller, flat repair — booked for 8:00a drop-off', out: 'Booked', type: 'good', val: '$35', dur: '1:36', extra: 'recovered call' },
+    { store: 'Fairless Hills', intent: 'Diagnostic', text: 'P0301 misfire — asked idle vs load, spark diag booked', out: 'Booked', type: 'good', val: '$119', dur: '3:22' },
+    { store: 'Norristown', intent: 'Booking', text: 'Wiper blades + PepCheck while waiting', out: 'Booked', type: 'good', val: '$54', dur: '1:29', upsell: 'PepCheck attached' }
+  ];
+
+  /* ---------------- helpers ---------------- */
+
+  function $(id) { return document.getElementById(id); }
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) { n.className = cls; }
+    if (text !== undefined) { n.textContent = text; }
+    return n;
+  }
+  function fmtMoney(v) {
+    if (v >= 1000000) { return '$' + (v / 1000000).toFixed(2) + 'M'; }
+    return '$' + v.toLocaleString('en-US');
+  }
+  function fmtNum(v) { return v.toLocaleString('en-US'); }
+  var SVGNS = 'http://www.w3.org/2000/svg';
+  function svgEl(tag, attrs) {
+    var n = document.createElementNS(SVGNS, tag), k;
+    for (k in attrs) { n.setAttribute(k, attrs[k]); }
+    return n;
+  }
+  function roundedTopRect(x, y, w, h, r) {
+    r = Math.min(r, w / 2, h);
+    return 'M' + x + ',' + (y + h) +
+      ' L' + x + ',' + (y + r) +
+      ' Q' + x + ',' + y + ' ' + (x + r) + ',' + y +
+      ' L' + (x + w - r) + ',' + y +
+      ' Q' + (x + w) + ',' + y + ' ' + (x + w) + ',' + (y + r) +
+      ' L' + (x + w) + ',' + (y + h) + ' Z';
+  }
+  function niceMax(v) {
+    var mag = Math.pow(10, Math.floor(Math.log(v) / Math.LN10));
+    var n = v / mag;
+    var step = n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10;
+    return step * mag;
+  }
+
+  /* ---------------- tooltip ---------------- */
+
+  var tt = $('tt');
+  function showTip(evt, title, rows) {
+    tt.textContent = '';
+    tt.appendChild(el('div', 'tt-title', title));
+    rows.forEach(function (r) {
+      var row = el('div', 'tt-row');
+      if (r.color) {
+        var key = el('span', 'tt-key');
+        key.style.background = r.color;
+        row.appendChild(key);
+      }
+      row.appendChild(el('span', '', r.label));
+      row.appendChild(el('span', 'tt-val', r.value));
+      tt.appendChild(row);
+    });
+    tt.style.display = 'block';
+    moveTip(evt);
+  }
+  function moveTip(evt) {
+    var pad = 14;
+    var x = evt.clientX + pad, y = evt.clientY + pad;
+    var r = tt.getBoundingClientRect();
+    if (x + r.width > window.innerWidth - 8) { x = evt.clientX - r.width - pad; }
+    if (y + r.height > window.innerHeight - 8) { y = evt.clientY - r.height - pad; }
+    tt.style.left = x + 'px';
+    tt.style.top = y + 'px';
+  }
+  function hideTip() { tt.style.display = 'none'; }
+
+  /* ---------------- sparklines ---------------- */
+
+  function renderSpark(id, values) {
+    var host = $(id);
+    host.textContent = '';
+    var w = 110, h = 28, pad = 4;
+    var min = Math.min.apply(null, values), max = Math.max.apply(null, values);
+    var span = max - min || 1;
+    var svg = svgEl('svg', { viewBox: '0 0 ' + w + ' ' + h, width: w, height: h, 'aria-hidden': 'true' });
+    var pts = values.map(function (v, i) {
+      var x = pad + i * (w - pad * 2) / (values.length - 1);
+      var y = h - pad - (v - min) / span * (h - pad * 2);
+      return [x, y];
+    });
+    var line = svgEl('polyline', {
+      points: pts.map(function (p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' '),
+      fill: 'none', 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round'
+    });
+    line.style.stroke = 'var(--ctx)';
+    svg.appendChild(line);
+    var last = pts[pts.length - 1];
+    var ring = svgEl('circle', { cx: last[0], cy: last[1], r: 5.5 });
+    ring.style.fill = 'var(--ring)';
+    svg.appendChild(ring);
+    var dot = svgEl('circle', { cx: last[0], cy: last[1], r: 3.5 });
+    dot.style.fill = 'var(--accent)';
+    svg.appendChild(dot);
+    host.appendChild(svg);
+  }
+
+  /* ---------------- volume chart ---------------- */
+
+  function renderVolume(range) {
+    var d = DATA[range].volume;
+    var host = $('vol-chart');
+    host.textContent = '';
+    $('vol-title').textContent = d.title;
+    $('vol-desc').textContent = d.desc;
+
+    var W = Math.max(420, host.clientWidth || 640);
+    var H = 236, padL = 34, padR = 8, padT = 12, padB = 26;
+    var plotW = W - padL - padR, plotH = H - padT - padB;
+    var n = d.labels.length;
+    var totals = d.staffed.map(function (s, i) { return s + d.recovered[i]; });
+    var yMax = niceMax(Math.max.apply(null, totals) * 1.08);
+    var slot = plotW / n;
+    var barW = Math.min(24, slot * 0.72);
+    var gap = 2;
+
+    var svg = svgEl('svg', { viewBox: '0 0 ' + W + ' ' + H, width: W, height: H,
+      role: 'img', 'aria-label': d.title });
+
+    d.closed.forEach(function (c, ci) {
+      var x0 = padL + c[0] * slot, x1 = padL + (c[1] + 1) * slot;
+      svg.appendChild(svgEl('rect', { x: x0, y: padT, width: x1 - x0, height: plotH,
+        'class': 'closed-wash' }));
+      if (ci === 0 && x1 - x0 > 130) {
+        var lbl = svgEl('text', { x: (x0 + x1) / 2, y: padT + 14, 'text-anchor': 'middle',
+          'class': 'closed-label' });
+        lbl.textContent = 'STORES CLOSED · AI ANSWERING';
+        svg.appendChild(lbl);
+      }
+    });
+
+    var ticks = 4, t;
+    for (t = 0; t <= ticks; t++) {
+      var val = yMax * t / ticks;
+      var y = padT + plotH - plotH * t / ticks;
+      svg.appendChild(svgEl('line', { x1: padL, y1: y, x2: W - padR, y2: y,
+        'class': t === 0 ? 'baseline' : 'grid-line' }));
+      var yl = svgEl('text', { x: padL - 6, y: y + 3.5, 'text-anchor': 'end', 'class': 'tick-label' });
+      yl.textContent = fmtNum(Math.round(val));
+      svg.appendChild(yl);
+    }
+
+    var i;
+    for (i = 0; i < n; i++) {
+      var x = padL + i * slot + (slot - barW) / 2;
+      var hS = d.staffed[i] / yMax * plotH;
+      var hR = d.recovered[i] / yMax * plotH;
+      var yBase = padT + plotH;
+      var g = svgEl('g', {});
+      if (hS > 0.5) {
+        if (hR > 0.5) {
+          g.appendChild(svgEl('rect', { x: x, y: yBase - hS, width: barW, height: hS,
+            'class': 'seg-staffed' }));
+        } else {
+          var p1 = svgEl('path', { d: roundedTopRect(x, yBase - hS, barW, hS, 4),
+            'class': 'seg-staffed' });
+          g.appendChild(p1);
+        }
+      }
+      if (hR > 0.5) {
+        var yR = yBase - hS - (hS > 0.5 ? gap : 0) - hR;
+        g.appendChild(svgEl('path', { d: roundedTopRect(x, yR, barW, hR, 4), 'class': 'seg-rec' }));
+      }
+      svg.appendChild(g);
+
+      (function (idx, group) {
+        var hit = svgEl('rect', { x: padL + idx * slot, y: padT, width: slot, height: plotH,
+          'class': 'hit', tabindex: '0' });
+        hit.setAttribute('aria-label', d.labels[idx] + ': ' + totals[idx] + ' calls, ' +
+          d.recovered[idx] + ' recovered');
+        function over(evt) {
+          group.classList.add('col-hover');
+          showTip(evt, d.labels[idx] + ' — ' + fmtNum(totals[idx]) + ' calls', [
+            { color: 'var(--ctx)', label: 'Store hours', value: fmtNum(d.staffed[idx]) },
+            { color: 'var(--accent)', label: 'Recovered', value: fmtNum(d.recovered[idx]) }
+          ]);
+        }
+        function out() { group.classList.remove('col-hover'); hideTip(); }
+        hit.addEventListener('pointermove', over);
+        hit.addEventListener('pointerleave', out);
+        hit.addEventListener('focus', function () {
+          var r = hit.getBoundingClientRect();
+          over({ clientX: r.left + r.width / 2, clientY: r.top + 30 });
+        });
+        hit.addEventListener('blur', out);
+        svg.appendChild(hit);
+      })(i, g);
+    }
+
+    d.xticks.forEach(function (xi) {
+      var xl = svgEl('text', { x: padL + xi * slot + slot / 2, y: H - 8,
+        'text-anchor': 'middle', 'class': 'tick-label' });
+      xl.textContent = d.labels[xi];
+      svg.appendChild(xl);
+    });
+
+    host.appendChild(svg);
+
+    var wrap = $('vol-table');
+    wrap.textContent = '';
+    var table = el('table'), thead = el('thead'), tr = el('tr');
+    [['', 0], ['Store hours', 1], ['Recovered', 1], ['Total', 1]].forEach(function (h) {
+      var th = el('th', h[1] ? 'num' : '', h[0]);
+      tr.appendChild(th);
+    });
+    thead.appendChild(tr);
+    table.appendChild(thead);
+    var tbody = el('tbody');
+    d.labels.forEach(function (lb, idx) {
+      var r = el('tr');
+      r.appendChild(el('td', '', lb));
+      r.appendChild(el('td', 'num', fmtNum(d.staffed[idx])));
+      r.appendChild(el('td', 'num', fmtNum(d.recovered[idx])));
+      r.appendChild(el('td', 'num', fmtNum(totals[idx])));
+      tbody.appendChild(r);
+    });
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+  }
+
+  /* ---------------- upsell ---------------- */
+
+  function renderUpsell(range) {
+    var offers = DATA[range].offers;
+    var off = 0, acc = 0, rev = 0;
+    offers.forEach(function (o) { off += o.off; acc += o.acc; rev += o.rev; });
+    var rate = acc / off * 100;
+
+    $('ups-rate').textContent = rate.toFixed(1) + '%';
+    $('ups-meter').style.width = rate.toFixed(1) + '%';
+    $('ups-counts').textContent = fmtNum(acc) + ' of ' + fmtNum(off) + ' offers accepted';
+    $('ups-rev').textContent = fmtMoney(rev);
+    $('ups-avg').textContent = 'avg add-on $' + Math.round(rev / acc);
+    $('k-upsell').textContent = fmtMoney(rev);
+    $('k-upsell-sub').textContent = rate.toFixed(1) + '% attach · ' + fmtNum(acc) + ' accepted offers';
+    $('k-upsell-d').textContent = DATA[range].kpis.upsell.d;
+
+    var maxOff = Math.max.apply(null, offers.map(function (o) { return o.off; }));
+    var host = $('offers');
+    host.textContent = '';
+    offers.forEach(function (o) {
+      var row = el('div', 'offer-row');
+      row.appendChild(el('span', 'name', o.name));
+      var bullet = el('div', 'bullet');
+      var track = el('div', 'track');
+      track.style.width = (o.off / maxOff * 100).toFixed(1) + '%';
+      var fill = el('div', 'fill');
+      fill.style.width = (o.acc / maxOff * 100).toFixed(1) + '%';
+      bullet.appendChild(track);
+      bullet.appendChild(fill);
+      row.appendChild(bullet);
+      var nums = el('span', 'nums');
+      var strong = el('strong', '', fmtNum(o.acc));
+      nums.appendChild(strong);
+      nums.appendChild(document.createTextNode(' / ' + fmtNum(o.off) + ' · ' + fmtMoney(o.rev)));
+      row.appendChild(nums);
+      (function (offer) {
+        function over(evt) {
+          showTip(evt, offer.name, [
+            { color: 'var(--accent-track)', label: 'Offered', value: fmtNum(offer.off) },
+            { color: 'var(--accent)', label: 'Accepted', value: fmtNum(offer.acc) + ' (' + Math.round(offer.acc / offer.off * 100) + '%)' },
+            { label: offer.note ? offer.note : 'Revenue', value: fmtMoney(offer.rev) }
+          ]);
+        }
+        bullet.addEventListener('pointermove', over);
+        bullet.addEventListener('pointerleave', hideTip);
+      })(o);
+      host.appendChild(row);
+    });
+
+    var wrap = $('offers-table');
+    wrap.textContent = '';
+    var table = el('table'), thead = el('thead'), tr = el('tr');
+    [['Offer', 0], ['Offered', 1], ['Accepted', 1], ['Rate', 1], ['Revenue', 1]].forEach(function (h) {
+      tr.appendChild(el('th', h[1] ? 'num' : '', h[0]));
+    });
+    thead.appendChild(tr);
+    table.appendChild(thead);
+    var tbody = el('tbody');
+    offers.forEach(function (o) {
+      var r = el('tr');
+      r.appendChild(el('td', '', o.name));
+      r.appendChild(el('td', 'num', fmtNum(o.off)));
+      r.appendChild(el('td', 'num', fmtNum(o.acc)));
+      r.appendChild(el('td', 'num', Math.round(o.acc / o.off * 100) + '%'));
+      r.appendChild(el('td', 'num', fmtMoney(o.rev)));
+      tbody.appendChild(r);
+    });
+    table.appendChild(tbody);
+    wrap.appendChild(table);
+  }
+
+  /* ---------------- containment ---------------- */
+
+  function renderContainment(range) {
+    var c = DATA[range].containment;
+    var total = c.ai + c.human + c.safety;
+    var stack = $('con-stack');
+    stack.textContent = '';
+
+    var ai = el('div', 's-ai');
+    ai.style.flexGrow = c.ai;
+    var aiLabel = el('span', '', Math.round(c.ai / total * 100) + '% AI-resolved');
+    ai.appendChild(aiLabel);
+    var hu = el('div', 's-hu'); hu.style.flexGrow = c.human;
+    var sa = el('div', 's-sa'); sa.style.flexGrow = Math.max(c.safety, total * 0.008);
+    stack.appendChild(ai); stack.appendChild(hu); stack.appendChild(sa);
+
+    var rows = $('con-rows');
+    rows.textContent = '';
+    [
+      { cls: 'sw-acc', label: 'Resolved end-to-end by AI', n: c.ai },
+      { cls: 'sw-blue', label: 'Warm transfer to advisor', n: c.human },
+      { cls: 'sw-crit', label: '⚠ Safety handoff to human', n: c.safety }
+    ].forEach(function (r) {
+      var row = el('div', 'con-row');
+      row.appendChild(el('span', 'swatch ' + r.cls));
+      row.appendChild(el('span', '', r.label));
+      var pct = el('span', 'pct', (r.n / total * 100).toFixed(1) + '%');
+      var n = el('span', 'n', fmtNum(r.n));
+      row.appendChild(n);
+      row.appendChild(pct);
+      rows.appendChild(row);
+    });
+
+    $('safety-strip').innerHTML = c.note;
+  }
+
+  /* ---------------- stores ---------------- */
+
+  function renderStores(range) {
+    var body = $('stores-body');
+    body.textContent = '';
+    var stores = DATA[range].stores.slice().sort(function (a, b) { return b[5] - a[5]; });
+    stores.forEach(function (s, i) {
+      var tr = el('tr');
+      tr.appendChild(el('td', 'rank', String(i + 1)));
+      tr.appendChild(el('td', '', s[0]));
+      tr.appendChild(el('td', 'num', fmtNum(s[1])));
+      tr.appendChild(el('td', 'num', fmtNum(s[2])));
+      tr.appendChild(el('td', 'num', s[3] + '%'));
+      var attachTd = el('td', 'num');
+      attachTd.appendChild(el('span', 'attach-chip', s[4] + '%'));
+      tr.appendChild(attachTd);
+      tr.appendChild(el('td', 'num rev-cell', fmtMoney(s[5])));
+      body.appendChild(tr);
+    });
+  }
+
+  /* ---------------- KPIs ---------------- */
+
+  function renderKPIs(range) {
+    var d = DATA[range];
+    $('k-revenue').textContent = fmtMoney(d.kpis.revenue.v);
+    $('k-revenue-d').textContent = '↑ ' + d.kpis.revenue.d.replace('+', '');
+    $('k-revenue-sub').textContent = d.kpis.revenue.sub;
+    $('k-answered').textContent = fmtNum(d.kpis.answered.v);
+    $('k-answered-d').textContent = '↑ ' + d.kpis.answered.d.replace('+', '');
+    $('k-bookings').textContent = fmtNum(d.kpis.bookings.v);
+    $('k-bookings-d').textContent = '↑ ' + d.kpis.bookings.d.replace('+', '');
+    $('k-bookings-sub').textContent = d.kpis.bookings.sub;
+    $('k-recovered').textContent = fmtNum(d.kpis.recovered.v);
+    $('k-recovered-d').textContent = '↑ ' + d.kpis.recovered.d.replace('+', '');
+    $('k-recovered-sub').textContent = d.kpis.recovered.sub;
+    $('k-upsell-d').textContent = '↑ ' + d.kpis.upsell.d.replace('+', '');
+    ['vs-1', 'vs-2', 'vs-3', 'vs-4', 'vs-5'].forEach(function (id) {
+      $(id).textContent = d.vsLabel;
+    });
+    var f = d.sparkScale;
+    renderSpark('sp-revenue', SPARK.revenue.map(function (v) { return v * f; }));
+    renderSpark('sp-answered', SPARK.answered.map(function (v) { return v * f; }));
+    renderSpark('sp-bookings', SPARK.bookings.map(function (v) { return v * f; }));
+    renderSpark('sp-recovered', SPARK.recovered.map(function (v) { return v * f; }));
+    renderSpark('sp-upsell', SPARK.upsell.map(function (v) { return v * f; }));
+  }
+
+  /* ---------------- live feed ---------------- */
+
+  var feedIdx = 0;
+  function timeStr(offsetMin) {
+    var d = new Date(Date.now() - (offsetMin || 0) * 60000);
+    return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  }
+  function feedItem(item, offsetMin, animate) {
+    var li = el('li', animate ? 'row-in' : '');
+    var meta = el('div', 'meta');
+    meta.appendChild(el('span', '', timeStr(offsetMin)));
+    meta.appendChild(el('span', '', '· ' + item.store));
+    var intentChip = el('span', 'chip chip-intent', item.intent);
+    meta.appendChild(intentChip);
+    li.appendChild(meta);
+    li.appendChild(el('div', 'txt', item.text));
+    var out = el('div', 'out');
+    out.appendChild(el('span', 'chip chip-' + item.type,
+      (item.type === 'critical' ? '⚠ ' : item.type === 'good' ? '✓ ' : '') + item.out));
+    if (item.val) { out.appendChild(el('span', 'val', item.val)); }
+    if (item.upsell) { out.appendChild(el('span', 'chip chip-upsell', '✦ ' + item.upsell)); }
+    if (item.extra) { out.appendChild(el('span', '', item.extra)); }
+    out.appendChild(el('span', 'dur', item.dur));
+    li.appendChild(out);
+    return li;
+  }
+  function initFeed(stagger) {
+    var feed = $('feed');
+    var offsets = [1, 4, 7, 11, 15, 19, 24];
+    offsets.forEach(function (off, i) {
+      var item = FEED_POOL[(i + 2) % FEED_POOL.length];
+      if (stagger > 0) {
+        setTimeout(function () { feed.appendChild(feedItem(item, off, true)); }, i * stagger);
+      } else {
+        feed.appendChild(feedItem(item, off, false));
+      }
+    });
+    feedIdx = offsets.length + 2;
+  }
+  function tickFeed() {
+    var feed = $('feed');
+    var item = FEED_POOL[feedIdx % FEED_POOL.length];
+    feedIdx++;
+    feed.insertBefore(feedItem(item, 0, true), feed.firstChild);
+    while (feed.children.length > 9) { feed.removeChild(feed.lastChild); }
+
+    DATA.today.kpis.answered.v += 1;
+    if (item.type === 'good' && item.val && item.val.indexOf('$') === 0) {
+      var amount = parseInt(item.val.replace(/[^0-9]/g, ''), 10) || 0;
+      DATA.today.kpis.bookings.v += 1;
+      DATA.today.kpis.revenue.v += amount;
+    }
+    if (currentRange === 'today') {
+      $('k-answered').textContent = fmtNum(DATA.today.kpis.answered.v);
+      $('k-bookings').textContent = fmtNum(DATA.today.kpis.bookings.v);
+      $('k-revenue').textContent = fmtMoney(DATA.today.kpis.revenue.v);
+      ['k-answered', 'k-bookings', 'k-revenue'].forEach(function (id) {
+        var n = $(id);
+        n.classList.remove('bump');
+        void n.offsetWidth;
+        n.classList.add('bump');
+      });
+    }
+  }
+
+  /* ---------------- range switching & init ---------------- */
+
+  var currentRange = 'today';
+  function renderAll(range) {
+    currentRange = range;
+    renderKPIs(range);
+    renderVolume(range);
+    renderUpsell(range);
+    renderContainment(range);
+    renderStores(range);
+    $('stores-desc').textContent = 'Ranked by revenue captured — ' +
+      (range === 'today' ? 'today' : range === 'week' ? 'last 7 days' : 'last 30 days') + '.';
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll('.range-btn'), function (btn) {
+    btn.addEventListener('click', function () {
+      Array.prototype.forEach.call(document.querySelectorAll('.range-btn'), function (b) {
+        b.setAttribute('aria-pressed', b === btn ? 'true' : 'false');
+      });
+      renderAll(btn.getAttribute('data-range'));
+    });
+  });
+
+  function tickClock() {
+    $('clock').textContent = new Date().toLocaleTimeString('en-US',
+      { hour: 'numeric', minute: '2-digit', second: '2-digit' });
+  }
+  setInterval(tickClock, 1000);
+  tickClock();
+
+  var resizeTimer = null;
+  window.addEventListener('resize', function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () { renderVolume(currentRange); }, 150);
+  });
+
+  /* ---------------- boot sequence ---------------- */
+
+  var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var demoStarted = false;
+
+  function animateValue(id, target, money, dur) {
+    var node = $(id);
+    if (reducedMotion) {
+      node.textContent = money ? fmtMoney(target) : fmtNum(target);
+      return;
+    }
+    var start = null;
+    function frame(ts) {
+      if (!start) { start = ts; }
+      var p = Math.min(1, (ts - start) / dur);
+      var eased = 1 - Math.pow(1 - p, 3);
+      var v = Math.round(target * eased);
+      node.textContent = money ? fmtMoney(v) : fmtNum(v);
+      if (p < 1) { requestAnimationFrame(frame); }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function startDemo(fast) {
+    if (demoStarted) { return; }
+    demoStarted = true;
+    $('boot').style.display = 'none';
+    var k = DATA.today.kpis;
+    var upsRev = DATA.today.offers.reduce(function (a, o) { return a + o.rev; }, 0);
+    animateValue('k-revenue', k.revenue.v, true, 1200);
+    animateValue('k-answered', k.answered.v, false, 1000);
+    animateValue('k-bookings', k.bookings.v, false, 1000);
+    animateValue('k-recovered', k.recovered.v, false, 1000);
+    animateValue('k-upsell', upsRev, true, 1200);
+    initFeed(fast || reducedMotion ? 0 : 180);
+    setInterval(tickFeed, 8000);
+  }
+
+  var BOOT_STEPS = [
+    'Agent fleet online — 4 workers standing by',
+    '8 stores linked — Philadelphia district',
+    'Store systems connected — slots, parts, pricing',
+    'Live event stream connected'
+  ];
+  $('boot-btn').addEventListener('click', function () {
+    var list = $('boot-steps');
+    list.style.display = 'flex';
+    $('boot-btn').disabled = true;
+    var delay = reducedMotion ? 0 : 450;
+    BOOT_STEPS.forEach(function (step, i) {
+      setTimeout(function () {
+        var row = el('div', 'boot-step');
+        row.appendChild(el('span', 'bs-check', '✓'));
+        row.appendChild(el('span', '', step));
+        list.appendChild(row);
+        if (i === BOOT_STEPS.length - 1) {
+          setTimeout(function () { startDemo(false); }, reducedMotion ? 0 : 550);
+        }
+      }, i * delay);
+    });
+  });
+  $('boot-skip').addEventListener('click', function () { startDemo(true); });
+  $('reset-demo').addEventListener('click', function () { window.location.reload(); });
+
+  // Rendering runs last and guarded: a chart error on an odd browser must
+  // never leave the boot button dead.
+  try {
+    renderAll('today');
+  } catch (err) {
+    if (window.console && console.error) { console.error(err); }
+  }
+
+  /* ---------------- live database (Supabase) ---------------- */
+  // Publishable key — safe to embed; demo tables are world-read/insert and
+  // truncated between demos. In production this becomes authenticated access.
+  var DB_URL = 'https://cpoxlwfvgtifgybjyvnm.supabase.co';
+  var DB_KEY = 'sb_publishable_BmJ4oJYthFcQhqW5B8d5eA_nDGUa738';
+  var db = null;
+
+  function applyLiveCall(item) {
+    var feed = $('feed');
+    feed.insertBefore(feedItem(item, 0, true), feed.firstChild);
+    while (feed.children.length > 9) { feed.removeChild(feed.lastChild); }
+
+    DATA.today.kpis.answered.v += 1;
+    if (item.type === 'good' && item.val && item.val.indexOf('$') === 0) {
+      var amount = parseInt(item.val.replace(/[^0-9]/g, ''), 10) || 0;
+      DATA.today.kpis.bookings.v += 1;
+      DATA.today.kpis.revenue.v += amount;
+    }
+    if (currentRange === 'today' && demoStarted) {
+      $('k-answered').textContent = fmtNum(DATA.today.kpis.answered.v);
+      $('k-bookings').textContent = fmtNum(DATA.today.kpis.bookings.v);
+      $('k-revenue').textContent = fmtMoney(DATA.today.kpis.revenue.v);
+      ['k-answered', 'k-bookings', 'k-revenue'].forEach(function (id) {
+        var n = $(id);
+        n.classList.remove('bump');
+        void n.offsetWidth;
+        n.classList.add('bump');
+      });
+    }
+  }
+
+  function rowToFeedItem(r) {
+    return {
+      store: r.store, intent: r.intent, text: r.summary, out: r.outcome,
+      type: r.outcome_type || 'good', val: r.value || '', dur: r.duration || '',
+      upsell: r.upsell || undefined, extra: r.extra || undefined
+    };
+  }
+
+  function initDb() {
+    if (!window.supabase) { return; }
+    try {
+      db = window.supabase.createClient(DB_URL, DB_KEY);
+      db.channel('ops-live')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'demo_calls' },
+          function (payload) { applyLiveCall(rowToFeedItem(payload.new)); })
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'demo_bookings' },
+          function (payload) {
+            var r = payload.new;
+            applyLiveCall({
+              store: r.store || 'Aramingo', intent: 'Booking', text: r.title + ' — ' + r.customer,
+              out: 'Booked', type: 'good', val: '', dur: '', extra: 'live event'
+            });
+          })
+        .subscribe();
+      window.__dbReady = true;
+    } catch (e) { db = null; }
+  }
+  var dbScript = document.createElement('script');
+  dbScript.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+  dbScript.onload = initDb;
+  document.head.appendChild(dbScript);
+})();
+</script>
+</html>

@@ -1,0 +1,740 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>intuService Shop — Aramingo</title>
+<style>
+  :root {
+    --page: #f7f5f0; --card: #fdfcf9; --line: #e6e2d7; --line-soft: #efece3;
+    --ink: #171511; --ink-2: #57534a; --ink-3: #8a867a;
+    --accent: #eda100; --accent-ink-on: #231a00; --accent-track: #f3e2b6;
+    --blue: #2a78d6; --good: #0ca30c; --good-text: #006300; --critical: #d03b3b;
+    --wash: rgba(23, 21, 17, 0.04);
+    --sans: system-ui, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "Cascadia Code", Consolas, "SF Mono", monospace;
+    --shadow: 0 1px 2px rgba(23, 21, 17, 0.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --page: #141311; --card: #1f1e1b; --line: #35332c; --line-soft: #2a2924;
+      --ink: #f4f2ec; --ink-2: #b5b1a4; --ink-3: #8a867a;
+      --accent: #c98500; --accent-ink-on: #1c1400; --accent-track: #453611;
+      --blue: #3987e5; --good-text: #0ca30c;
+      --wash: rgba(244, 242, 236, 0.05); --shadow: none;
+    }
+  }
+  :root[data-theme="dark"] {
+    --page: #141311; --card: #1f1e1b; --line: #35332c; --line-soft: #2a2924;
+    --ink: #f4f2ec; --ink-2: #b5b1a4; --ink-3: #8a867a;
+    --accent: #c98500; --accent-ink-on: #1c1400; --accent-track: #453611;
+    --blue: #3987e5; --good-text: #0ca30c;
+    --wash: rgba(244, 242, 236, 0.05); --shadow: none;
+  }
+  :root[data-theme="light"] {
+    --page: #f7f5f0; --card: #fdfcf9; --line: #e6e2d7; --line-soft: #efece3;
+    --ink: #171511; --ink-2: #57534a; --ink-3: #8a867a;
+    --accent: #eda100; --accent-ink-on: #231a00; --accent-track: #f3e2b6;
+    --blue: #2a78d6; --good-text: #006300;
+    --wash: rgba(23, 21, 17, 0.04); --shadow: 0 1px 2px rgba(23, 21, 17, 0.05);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--page); color: var(--ink); font-family: var(--sans);
+    font-size: 14px; line-height: 1.45; padding: 18px clamp(14px, 3vw, 32px) 40px;
+  }
+  button { font: inherit; color: inherit; }
+
+  header { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding-bottom: 12px; }
+  .wordmark { font-size: 19px; font-weight: 800; letter-spacing: -0.01em; }
+  .wordmark .tag {
+    background: var(--accent); color: var(--accent-ink-on); font-size: 11px;
+    font-weight: 800; letter-spacing: 0.08em; border-radius: 4px; padding: 2px 6px;
+    margin-left: 6px; vertical-align: 2px;
+  }
+  .context { color: var(--ink-2); font-size: 13px; }
+  .header-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+  .clock { font-family: var(--mono); font-size: 13px; color: var(--ink-2); }
+  .live { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: var(--good-text); }
+  .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); animation: pulse 1.8s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.35 } }
+  .sim-btn {
+    background: var(--accent); color: var(--accent-ink-on); border: none;
+    border-radius: 7px; padding: 8px 14px; font-size: 13px; font-weight: 800; cursor: pointer;
+  }
+  .sim-btn:hover { filter: brightness(1.06); }
+  .sim-btn:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+  .strip {
+    display: flex; flex-wrap: wrap; gap: 8px 26px; align-items: center;
+    border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    padding: 10px 0; margin-bottom: 14px; font-size: 13px; color: var(--ink-2);
+  }
+  .strip .stat strong { font-size: 16px; color: var(--ink); font-weight: 800; margin-right: 4px; }
+  .legend { margin-left: auto; display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--ink-2); }
+  .legend .key { display: inline-flex; align-items: center; gap: 6px; }
+  .dot { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
+  .dot-routine { background: var(--good); }
+  .dot-diag { background: var(--accent); }
+  .dot-urgent { background: var(--critical); }
+
+  .layout { display: grid; grid-template-columns: 290px 1fr; gap: 12px; align-items: start; }
+
+  .panel {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px; box-shadow: var(--shadow); min-width: 0;
+  }
+  .panel h2 { font-size: 15px; font-weight: 700; margin: 0 0 2px; }
+  .panel .desc { font-size: 12px; color: var(--ink-3); margin: 0 0 10px; }
+
+  .queue { display: flex; flex-direction: column; gap: 8px; }
+  .qcard {
+    border: 1px solid var(--line); border-left-width: 3px; border-radius: 7px;
+    padding: 9px 11px; cursor: pointer; background: var(--card);
+  }
+  .qcard:hover { background: var(--wash); }
+  .qcard .when { font-family: var(--mono); font-size: 11.5px; color: var(--ink-3); display: flex; gap: 8px; align-items: center; }
+  .qcard .what { font-size: 13px; font-weight: 700; margin: 2px 0 1px; }
+  .qcard .who { font-size: 12px; color: var(--ink-2); }
+  .qcard.new { animation: flashIn 1.2s ease; }
+  @keyframes flashIn { 0% { background: var(--accent-track); } 100% { background: var(--card); } }
+  .job.job-new { animation: jobIn 1.8s ease; }
+  @keyframes jobIn {
+    0% { background: var(--accent-track); box-shadow: 0 0 0 2px var(--accent); }
+    100% { background: var(--card); box-shadow: var(--shadow); }
+  }
+  .sev-routine { border-left-color: var(--good); }
+  .sev-diag { border-left-color: var(--accent); }
+  .sev-urgent { border-left-color: var(--critical); }
+
+  .badge {
+    display: inline-block; font-size: 10px; font-weight: 800; letter-spacing: 0.05em;
+    border: 1px solid var(--line); border-radius: 4px; padding: 0.5px 5px; color: var(--ink-2);
+  }
+  .badge-ai { background: var(--accent-track); border-color: transparent; color: var(--ink); }
+  .badge-tow { background: var(--critical); border-color: transparent; color: #fff; }
+
+  .board-scroll { overflow-x: auto; }
+  .board { min-width: 720px; }
+  .bay-heads { display: grid; grid-template-columns: 52px repeat(4, minmax(160px, 1fr)); margin-bottom: 6px; }
+  .bay-heads .bh {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+    color: var(--ink-2); padding: 0 8px 4px; border-left: 1px solid var(--line-soft);
+  }
+  .tl { position: relative; display: grid; grid-template-columns: 52px repeat(4, minmax(160px, 1fr)); }
+  .gutter { position: relative; height: 560px; }
+  .gutter span {
+    position: absolute; right: 8px; transform: translateY(-6px);
+    font-size: 11px; color: var(--ink-3); font-variant-numeric: tabular-nums;
+  }
+  .bay {
+    position: relative; height: 560px; border-left: 1px solid var(--line-soft);
+    background-image: repeating-linear-gradient(to bottom, var(--line-soft) 0 1px, transparent 1px 56px);
+  }
+  .job {
+    position: absolute; left: 5px; right: 5px; border: 1px solid var(--line);
+    border-left-width: 3px; border-radius: 7px; background: var(--card);
+    padding: 6px 9px; cursor: pointer; overflow: hidden; box-shadow: var(--shadow);
+  }
+  .job:hover { background: var(--wash); }
+  .job:focus-visible, .qcard:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
+  .job .jt { font-size: 12.5px; font-weight: 700; line-height: 1.25; }
+  .job .jw { font-size: 11.5px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .job .jm { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); margin-top: 1px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .now-line { position: absolute; left: 52px; right: 0; height: 0; border-top: 2px solid var(--critical); z-index: 5; pointer-events: none; }
+  .now-line::before {
+    content: ""; position: absolute; left: -5px; top: -5px; width: 8px; height: 8px;
+    border-radius: 50%; background: var(--critical);
+  }
+  .now-tag {
+    position: absolute; left: 0; transform: translateY(-9px); font-size: 10px;
+    font-weight: 800; color: var(--critical); font-variant-numeric: tabular-nums;
+  }
+
+  #scrim { position: fixed; top: 0; right: 0; bottom: 0; left: 0; background: rgba(0,0,0,0.35); z-index: 55; display: none; }
+  #drawer {
+    position: fixed; top: 0; right: 0; bottom: 0; width: 400px; max-width: 100vw;
+    background: var(--card); border-left: 1px solid var(--line); z-index: 60;
+    padding: 20px 22px; overflow-y: auto; transform: translateX(105%);
+    transition: transform 0.25s ease;
+  }
+  #drawer.open { transform: translateX(0); }
+  @media (prefers-reduced-motion: reduce) {
+    #drawer { transition: none; }
+    .live-dot { animation: none; }
+    .qcard.new { animation: none; }
+  }
+  .d-head { display: flex; align-items: flex-start; gap: 10px; }
+  .d-head h3 { margin: 0; font-size: 17px; font-weight: 800; }
+  .d-close {
+    margin-left: auto; background: none; border: 1px solid var(--line); border-radius: 6px;
+    width: 28px; height: 28px; cursor: pointer; color: var(--ink-2); font-size: 14px; line-height: 1;
+  }
+  .d-close:hover { background: var(--wash); }
+  .chip {
+    display: inline-flex; align-items: center; gap: 4px; font-size: 10.5px; font-weight: 800;
+    letter-spacing: 0.04em; border-radius: 4px; padding: 2px 7px;
+  }
+  .chip-routine { background: var(--good); color: #fff; }
+  .chip-diag { background: var(--accent); color: var(--accent-ink-on); }
+  .chip-urgent { background: var(--critical); color: #fff; }
+  .chip-dtc { background: var(--wash); border: 1px solid var(--line); color: var(--ink); font-family: var(--mono); }
+  .d-meta { font-size: 12.5px; color: var(--ink-2); margin: 8px 0 2px; }
+  .d-sec { margin-top: 16px; }
+  .d-sec .lbl {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--ink-3); margin-bottom: 4px;
+  }
+  .d-quote {
+    border-left: 3px solid var(--line); padding: 6px 10px; font-size: 13px;
+    color: var(--ink-2); font-style: italic; background: var(--wash); border-radius: 0 6px 6px 0;
+  }
+  .d-tri { font-size: 13.5px; }
+  .parts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+  .parts li { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .p-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .p-in { background: var(--good); }
+  .p-ord { background: var(--accent); }
+  .parts .st { margin-left: auto; font-size: 11.5px; color: var(--ink-3); }
+  .photo-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+  .photo-grid a {
+    display: block; width: 84px; height: 84px; border-radius: 8px;
+    overflow: hidden; border: 1px solid var(--line);
+  }
+  .photo-grid img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .d-actions { display: flex; gap: 8px; margin-top: 20px; }
+  .d-btn {
+    border: 1px solid var(--line); background: none; border-radius: 7px;
+    padding: 8px 12px; font-size: 13px; font-weight: 700; cursor: pointer; color: var(--ink-2);
+  }
+  .d-btn.primary { background: var(--accent); color: var(--accent-ink-on); border-color: var(--accent); }
+  .d-btn:hover { filter: brightness(1.04); }
+
+  footer { margin-top: 16px; font-size: 12px; color: var(--ink-3); display: flex; gap: 8px; flex-wrap: wrap; }
+
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+    .legend { margin-left: 0; }
+  }
+</style>
+
+<header>
+  <div>
+    <div class="wordmark">intuService<span class="tag">SHOP</span></div>
+    <div class="context">Alpine View · Comstock Park, MI · today's board · <strong>Pilot demo</strong></div>
+  </div>
+  <div class="header-right">
+    <span class="live"><span class="live-dot"></span>LIVE</span>
+    <span class="clock" id="clock">--:--</span>
+    <button class="sim-btn" id="clear">Clear board</button>
+  </div>
+</header>
+
+<div class="strip">
+  <span class="stat"><strong id="stat-vehicles">0</strong> vehicles today</span>
+  <span class="stat"><strong id="stat-diag">0</strong> diagnostics</span>
+  <span class="stat"><strong id="stat-tow">0</strong> tow-in</span>
+  <span class="stat"><strong id="parts-pending">0</strong> parts pending</span>
+  <span class="legend">
+    <span class="key"><span class="dot dot-routine"></span>Routine — known scope</span>
+    <span class="key"><span class="dot dot-diag"></span>Diagnostic — scope open</span>
+    <span class="key"><span class="dot dot-urgent"></span>Urgent / tow-in</span>
+  </span>
+</div>
+
+<div class="layout">
+  <section class="panel" aria-label="Arriving next">
+    <h2>Arriving next</h2>
+    <p class="desc">Booked by the AI advisor — tap a card for the work-ready ticket.</p>
+    <div class="queue" id="queue"></div>
+  </section>
+
+  <section class="panel" aria-label="Bay schedule">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+      <h2>Bay schedule</h2>
+      <label style="font-size:12px;display:inline-flex;align-items:center;gap:6px;opacity:.85;white-space:nowrap;">Showing
+        <input type="date" id="board-date" aria-label="Board date"
+          style="font:inherit;padding:3px 7px;border-radius:6px;border:1px solid rgba(128,128,128,.4);background:transparent;color:inherit;cursor:pointer;">
+      </label>
+    </div>
+    <p class="desc">8 AM – 6 PM · every card arrives with triage done and parts pulled before the vehicle lands.</p>
+    <div class="board-scroll">
+      <div class="board">
+        <div class="bay-heads">
+          <span></span>
+          <span class="bh">Bay 1</span><span class="bh">Bay 2</span>
+          <span class="bh">Bay 3</span><span class="bh">Alignment rack</span>
+        </div>
+        <div class="tl" id="tl">
+          <div class="gutter" id="gutter"></div>
+          <div class="bay" id="bay0"></div>
+          <div class="bay" id="bay1"></div>
+          <div class="bay" id="bay2"></div>
+          <div class="bay" id="bay3"></div>
+          <div class="now-line" id="now-line" style="display:none"><span class="now-tag" id="now-tag"></span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<footer>
+  <span>Seeded demonstration data — all figures illustrative.</span>
+  <span>·</span>
+  <span>intuService × Downtown Auto Group pilot concept · shop view.</span>
+</footer>
+
+<div id="scrim"></div>
+<aside id="drawer" role="dialog" aria-label="Job details" aria-hidden="true"></aside>
+
+<script>
+/* Theme sync when embedded in the intuService dashboard shell: honor a
+   ?theme=light|dark query param on load, and live updates via postMessage. */
+(function () {
+  function applyTheme(t) {
+    if (t === 'dark' || t === 'light') {
+      document.documentElement.setAttribute('data-theme', t);
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+  }
+  try {
+    var p = new URLSearchParams(window.location.search).get('theme');
+    if (p) { applyTheme(p); }
+  } catch (e) { /* no-op */ }
+  window.addEventListener('message', function (e) {
+    if (e.data && e.data.type === 'intuservice-theme') { applyTheme(e.data.theme); }
+  });
+})();
+</script>
+
+<script>
+(function () {
+  'use strict';
+
+  var DAY_START = 8 * 60, DAY_END = 18 * 60, PX_PER_30 = 28;
+  var NUM_BAYS = 4;
+  var DUR_BY_SEV = { urgent: 120, diag: 120, routine: 60 };
+
+  // Single source of truth: every booking is loaded live from Supabase
+  // (demo_bookings). The bay schedule and the "arriving next" feed are both
+  // rendered from this one array, so an AI booking appears the moment it lands.
+  var bookings = [];
+  var newIds = {};
+
+  function _overlaps(list, s, e) {
+    return list.some(function (iv) { return s < iv[1] && e > iv[0]; });
+  }
+  function parseArrive(txt) {
+    if (!txt) { return null; }
+    var m = String(txt).match(/(\d{1,2}):(\d{2})\s*([ap])/i);
+    if (m) {
+      var hh = parseInt(m[1], 10) % 12;
+      if (m[3].toLowerCase() === 'p') { hh += 12; }
+      return hh * 60 + parseInt(m[2], 10);
+    }
+    var m2 = String(txt).match(/(\d{1,2})\s*([ap])/i);
+    if (m2) {
+      var h2 = parseInt(m2[1], 10) % 12;
+      if (m2[2].toLowerCase() === 'p') { h2 += 12; }
+      return h2 * 60;
+    }
+    return null;
+  }
+  function $(id) { return document.getElementById(id); }
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    if (cls) { n.className = cls; }
+    if (text !== undefined) { n.textContent = text; }
+    return n;
+  }
+  function toMin(hm) {
+    var p = hm.split(':');
+    return parseInt(p[0], 10) * 60 + parseInt(p[1], 10);
+  }
+  function fmtRange(startMin, dur) {
+    function f(m) {
+      var h = Math.floor(m / 60), mm = m % 60, ap = h >= 12 ? 'p' : 'a';
+      var hh = h % 12; if (hh === 0) { hh = 12; }
+      return hh + (mm ? ':' + (mm < 10 ? '0' : '') + mm : '') + ap;
+    }
+    return f(startMin) + '–' + f(startMin + dur);
+  }
+
+  /* ---------- drawer (wired first, per hard-won lesson) ---------- */
+
+  var drawer = $('drawer'), scrim = $('scrim');
+  function openDrawer(job, timeLabel) {
+    drawer.textContent = '';
+    drawer.setAttribute('aria-hidden', 'false');
+
+    var head = el('div', 'd-head');
+    head.appendChild(el('h3', '', job.title));
+    var close = el('button', 'd-close', '×');
+    close.setAttribute('aria-label', 'Close');
+    close.addEventListener('click', closeDrawer);
+    head.appendChild(close);
+    drawer.appendChild(head);
+
+    var chips = el('div', '');
+    chips.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;margin-top:8px';
+    var sevLabel = job.sev === 'urgent' ? 'Urgent' : job.sev === 'diag' ? 'Diagnostic' : 'Routine';
+    chips.appendChild(el('span', 'chip chip-' + job.sev, (job.sev === 'urgent' ? '⚠ ' : '') + sevLabel));
+    if (job.dtc) { chips.appendChild(el('span', 'chip chip-dtc', job.dtc)); }
+    (job.badges || []).forEach(function (b) {
+      chips.appendChild(el('span', 'badge' + (b === 'AI' ? ' badge-ai' : b === 'TOW' ? ' badge-tow' : ''), b));
+    });
+    drawer.appendChild(chips);
+
+    drawer.appendChild(el('div', 'd-meta', timeLabel + ' · ' + job.cust + ' · ' + (job.veh || job.who)));
+    var contactBits = [];
+    if (job.phone) { contactBits.push('☎ ' + job.phone); }
+    if (job.store) { contactBits.push('Service center: ' + job.store); }
+    if (contactBits.length) {
+      drawer.appendChild(el('div', 'd-meta', contactBits.join(' · ')));
+    }
+
+    if (job.offer) {
+      var coup = el('div', 'd-sec');
+      coup.appendChild(el('div', 'lbl', 'Coupon applied'));
+      var chip = el('span', 'chip chip-diag', '✦ ' + job.offer);
+      coup.appendChild(chip);
+      drawer.appendChild(coup);
+    }
+
+    var s1 = el('div', 'd-sec');
+    s1.appendChild(el('div', 'lbl', 'Customer reported'));
+    s1.appendChild(el('div', 'd-quote', '“' + job.complaint + '”'));
+    drawer.appendChild(s1);
+
+    var s2 = el('div', 'd-sec');
+    s2.appendChild(el('div', 'lbl', 'AI triage'));
+    s2.appendChild(el('div', 'd-tri', job.triage));
+    drawer.appendChild(s2);
+
+    if (job.photos && job.photos.length) {
+      var sp = el('div', 'd-sec');
+      sp.appendChild(el('div', 'lbl', 'Photo' + (job.photos.length > 1 ? 's' : '') + ' from caller'));
+      var grid = el('div', 'photo-grid');
+      job.photos.forEach(function (url) {
+        var a = el('a');
+        a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+        var img = el('img');
+        img.src = url; img.alt = 'Photo sent by caller'; img.loading = 'lazy';
+        a.appendChild(img);
+        grid.appendChild(a);
+      });
+      sp.appendChild(grid);
+      drawer.appendChild(sp);
+    }
+
+    if (job.parts && job.parts.length) {
+      var s3 = el('div', 'd-sec');
+      s3.appendChild(el('div', 'lbl', 'Parts staged'));
+      var ul = el('ul', 'parts');
+      job.parts.forEach(function (p) {
+        var li = el('li');
+        li.appendChild(el('span', 'p-dot ' + (p[1] === 'in' ? 'p-in' : 'p-ord')));
+        li.appendChild(el('span', '', p[0]));
+        li.appendChild(el('span', 'st', p[1] === 'in' ? 'in stock' : 'ordered'));
+        ul.appendChild(li);
+      });
+      s3.appendChild(ul);
+      drawer.appendChild(s3);
+    }
+
+    var s4 = el('div', 'd-sec');
+    s4.appendChild(el('div', 'lbl', 'Promised'));
+    s4.appendChild(el('div', 'd-tri', job.promised));
+    drawer.appendChild(s4);
+
+    var s5 = el('div', 'd-sec');
+    s5.appendChild(el('div', 'lbl', 'Booked'));
+    s5.appendChild(el('div', 'd-tri', job.booked));
+    drawer.appendChild(s5);
+
+    var actions = el('div', 'd-actions');
+    var b1 = el('button', 'd-btn primary', 'Print repair order');
+    var b2 = el('button', 'd-btn', 'Text customer');
+    b1.title = 'Demo control'; b2.title = 'Demo control';
+    actions.appendChild(b1); actions.appendChild(b2);
+    drawer.appendChild(actions);
+
+    scrim.style.display = 'block';
+    drawer.classList.add('open');
+    // Track which ticket is open so a live booking update (e.g. a late photo)
+    // can refresh it in place.
+    window.__openJobId = job.id;
+  }
+  function closeDrawer() {
+    drawer.classList.remove('open');
+    drawer.setAttribute('aria-hidden', 'true');
+    scrim.style.display = 'none';
+    window.__openJobId = null;
+  }
+  scrim.addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeDrawer(); } });
+
+  /* ---------- clock + now line ---------- */
+
+  function tick() {
+    var d = new Date();
+    $('clock').textContent = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    var mins = d.getHours() * 60 + d.getMinutes();
+    var line = $('now-line');
+    if (mins >= DAY_START && mins <= DAY_END) {
+      var top = (mins - DAY_START) / 30 * PX_PER_30;
+      line.style.display = 'block';
+      line.style.top = top + 'px';
+      var headH = 0;
+      line.style.marginTop = headH + 'px';
+      $('now-tag').textContent = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    } else {
+      line.style.display = 'none';
+    }
+  }
+  setInterval(tick, 30000);
+  tick();
+
+  /* ---------- clear board ---------- */
+
+  // Reset the board for the next demo: delete every booking in Supabase so all
+  // open screens clear (via the realtime DELETE handler below). Falls back to a
+  // local-only clear if the demo table blocks deletes.
+  function clearLocal() {
+    bookings = [];
+    newIds = {};
+    closeDrawer();
+    renderAll();
+  }
+  $('clear').addEventListener('click', function () {
+    if (!window.confirm('Clear all bookings from the board? This removes them for every open screen.')) { return; }
+    if (db) {
+      db.from('demo_bookings').delete().not('id', 'is', null).then(function (res) {
+        if (res.error) { console.warn('board clear: delete blocked, clearing locally', res.error); }
+        clearLocal();
+      });
+    } else {
+      clearLocal();
+    }
+  });
+
+  /* ---------- render (all views from `bookings`) ---------- */
+
+  function fmtClock(m) {
+    var h = Math.floor(m / 60), mm = m % 60, ap = h < 12 ? 'AM' : 'PM';
+    var hh = h % 12; if (hh === 0) { hh = 12; }
+    return hh + ':' + (mm < 10 ? '0' : '') + mm + ' ' + ap;
+  }
+
+  // Map a demo_bookings row into the object every view + the drawer expect.
+  function normalize(r) {
+    var parts = [];
+    (r.parts || []).forEach(function (p) { if (p && p.length) { parts.push([p[0], p[1] || 'in']); } });
+    return {
+      id: r.id,
+      created: r.created_at || '',
+      bookingDate: r.booking_date || '',
+      bay: r.bay == null ? null : r.bay,
+      startMin: r.start_min == null ? parseArrive(r.arrive_at) : r.start_min,
+      dur: r.duration_min || DUR_BY_SEV[r.severity] || 90,
+      arrive: r.arrive_at || '',
+      title: r.title || 'Service',
+      cust: r.customer || '',
+      veh: r.vehicle || '',
+      phone: r.phone || null,
+      store: r.store || null,
+      sev: r.severity || 'routine',
+      badges: r.badges || [],
+      note: r.note || '',
+      complaint: r.complaint || '—',
+      triage: r.triage || '—',
+      dtc: r.dtc || null,
+      parts: parts,
+      photos: Array.isArray(r.photo_urls) ? r.photo_urls.filter(Boolean) : [],
+      promised: r.promised || '—',
+      booked: r.booked_via || 'AI call',
+      offer: r.offer || null
+    };
+  }
+
+  function makeJobCard(job) {
+    var card = el('div', 'job sev-' + job.sev);
+    card.setAttribute('tabindex', '0');
+    card.style.top = ((job.startMin - DAY_START) / 30 * PX_PER_30 + 1) + 'px';
+    card.style.height = (job.dur / 30 * PX_PER_30 - 5) + 'px';
+    card.appendChild(el('div', 'jt', job.title));
+    card.appendChild(el('div', 'jw', job.cust + ' · ' + job.veh));
+    var meta = el('div', 'jm');
+    meta.appendChild(el('span', '', fmtRange(job.startMin, job.dur)));
+    if (job.dtc) { meta.appendChild(el('span', 'badge', job.dtc)); }
+    (job.badges || []).forEach(function (b) {
+      meta.appendChild(el('span', 'badge' + (b === 'AI' ? ' badge-ai' : b === 'TOW' ? ' badge-tow' : ''), b));
+    });
+    card.appendChild(meta);
+    function open() { openDrawer(job, fmtRange(job.startMin, job.dur)); }
+    card.addEventListener('click', open);
+    card.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
+    });
+    return card;
+  }
+
+  function makeQueueCard(job) {
+    var label = job.arrive || (job.startMin != null ? fmtClock(job.startMin) : '');
+    var c = el('div', 'qcard sev-' + job.sev + (newIds[job.id] ? ' new' : ''));
+    c.setAttribute('tabindex', '0');
+    var when = el('div', 'when');
+    when.appendChild(el('span', '', label));
+    (job.badges || []).forEach(function (b) {
+      when.appendChild(el('span', 'badge' + (b === 'AI' ? ' badge-ai' : ''), b));
+    });
+    c.appendChild(when);
+    c.appendChild(el('div', 'what', job.title));
+    c.appendChild(el('div', 'who', job.cust + ' · ' + job.veh + (job.note ? ' · ' + job.note : '')));
+    function open() { openDrawer(job, label ? 'Arriving ' + label : job.title); }
+    c.addEventListener('click', open);
+    c.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
+    });
+    return c;
+  }
+
+  function renderGutter() {
+    var g = $('gutter');
+    g.textContent = '';
+    for (var h = 0; h <= 10; h++) {
+      var lbl = el('span', '', (h + 8 <= 12 ? h + 8 : h - 4) + (h + 8 < 12 ? ' AM' : ' PM'));
+      lbl.style.top = (h * 2 * PX_PER_30) + 'px';
+      g.appendChild(lbl);
+    }
+  }
+
+  // Date filter: the board shows one day at a time. A booking's day is its
+  // booking_date when set; older rows written before that column fall back to
+  // their created_at date. Defaults to today.
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function toISODate(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+  function localDateOf(iso) { var d = new Date(iso); return isNaN(d.getTime()) ? '' : toISODate(d); }
+  // The day a booking belongs to: explicit booking_date (already YYYY-MM-DD), else created_at's date.
+  function dayOf(b) { return b.bookingDate || localDateOf(b.created); }
+  var selectedDate = toISODate(new Date());
+  // Bookings on the selected day (undated rows always show, so nothing vanishes).
+  function visible() {
+    return bookings.filter(function (b) { var d = dayOf(b); return !d || d === selectedDate; });
+  }
+
+  function renderGrid() {
+    for (var b = 0; b < NUM_BAYS; b++) { $('bay' + b).textContent = ''; }
+    visible().filter(function (j) { return j.bay != null && j.startMin != null; })
+      .sort(function (a, b) { return a.startMin - b.startMin; })
+      .forEach(function (j) {
+        var card = makeJobCard(j);
+        if (newIds[j.id]) { card.classList.add('job-new'); }
+        $('bay' + j.bay).appendChild(card);
+      });
+  }
+
+  function renderQueue() {
+    var host = $('queue');
+    host.textContent = '';
+    visible().slice()
+      .sort(function (a, b) { return (b.created || '').localeCompare(a.created || ''); })
+      .slice(0, 6)
+      .forEach(function (j) { host.appendChild(makeQueueCard(j)); });
+  }
+
+  function setStat(id, val) { var n = $(id); if (n) { n.textContent = val; } }
+  function updateStats() {
+    var diag = 0, tow = 0, pending = 0;
+    var vis = visible();
+    vis.forEach(function (j) {
+      if (j.sev === 'diag') { diag++; }
+      if ((j.badges || []).indexOf('TOW') >= 0) { tow++; }
+      (j.parts || []).forEach(function (p) { if (p[1] === 'ord') { pending++; } });
+    });
+    setStat('stat-vehicles', vis.length);
+    setStat('stat-diag', diag);
+    setStat('stat-tow', tow);
+    setStat('parts-pending', pending);
+  }
+
+  function renderAll() { renderGrid(); renderQueue(); updateStats(); }
+
+  // Wire the board-date picker: default to today, re-render on change.
+  var dateInput = $('board-date');
+  if (dateInput) {
+    dateInput.value = selectedDate;
+    dateInput.addEventListener('change', function () {
+      selectedDate = this.value || toISODate(new Date());
+      if (!this.value) { this.value = selectedDate; }
+      renderAll();
+    });
+  }
+
+  renderGutter();
+  renderAll();
+
+  /* ---------------- live database (Supabase) ---------------- */
+  // Publishable key — safe to embed; demo tables are world-read/insert and
+  // truncated between demos. In production this becomes authenticated access.
+  var DB_URL = 'https://cpoxlwfvgtifgybjyvnm.supabase.co';
+  var DB_KEY = 'sb_publishable_BmJ4oJYthFcQhqW5B8d5eA_nDGUa738';
+  var db = null;
+
+  function initDb() {
+    if (!window.supabase) { return; }
+    try {
+      db = window.supabase.createClient(DB_URL, DB_KEY);
+      db.from('demo_bookings').select('*')
+        .order('created_at', { ascending: true })
+        .then(function (res) {
+          if (res.data) {
+            bookings = res.data.map(normalize);
+            renderAll();
+          }
+        });
+      db.channel('shop-live')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'demo_bookings' },
+          function (payload) {
+            var j = normalize(payload.new);
+            bookings.push(j);
+            newIds[j.id] = 1;
+            renderAll();
+            setTimeout(function () { delete newIds[j.id]; renderAll(); }, 2000);
+          })
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'demo_bookings' },
+          function (payload) {
+            // A ticket changed after it was created — most often a photo the
+            // caller sent later in the call. Replace it in place and re-render.
+            var j = normalize(payload.new);
+            var i = bookings.findIndex(function (b) { return b.id === j.id; });
+            if (i >= 0) { bookings[i] = j; } else { bookings.push(j); }
+            newIds[j.id] = 1;
+            renderAll();
+            setTimeout(function () { delete newIds[j.id]; renderAll(); }, 2000);
+            // If the ticket is open right now, refresh it so the photo appears live.
+            if (window.__openJobId === j.id) { openDrawer(j, fmtRange(j.startMin, j.dur)); }
+          })
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'demo_bookings' },
+          function (payload) {
+            // Another screen (or this one) cleared the board — drop the row here too.
+            var oldId = payload.old && payload.old.id;
+            if (oldId != null) {
+              bookings = bookings.filter(function (b) { return b.id !== oldId; });
+              if (window.__openJobId === oldId) { closeDrawer(); }
+              renderAll();
+            }
+          })
+        .subscribe();
+      window.__dbReady = true;
+    } catch (e) { db = null; }
+  }
+  var dbScript = document.createElement('script');
+  dbScript.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
+  dbScript.onload = initDb;
+  document.head.appendChild(dbScript);
+})();
+</script>
+</html>

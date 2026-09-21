@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>intuService Owner — Demo</title>
+<style>
+  :root {
+    --page: #f7f5f0; --card: #fdfcf9; --line: #e6e2d7; --line-soft: #efece3;
+    --ink: #171511; --ink-2: #57534a; --ink-3: #8a867a;
+    --accent: #7c3aed; --accent-ink-on: #ffffff; --accent-track: #ede9fe;
+    --blue: #2a78d6; --good-text: #006300; --good: #0ca30c; --critical: #d03b3b;
+    --wash: rgba(23, 21, 17, 0.04);
+    --sans: system-ui, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "Cascadia Code", Consolas, "SF Mono", monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --page: #141311; --card: #1f1e1b; --line: #35332c; --line-soft: #2a2924;
+      --ink: #f4f2ec; --ink-2: #b5b1a4; --ink-3: #8a867a;
+      --accent: #a78bfa; --accent-ink-on: #241b3f; --accent-track: #3c3467;
+      --blue: #3987e5; --good-text: #0ca30c; --wash: rgba(244, 242, 236, 0.05);
+    }
+  }
+  :root[data-theme="dark"] {
+    --page: #141311; --card: #1f1e1b; --line: #35332c; --line-soft: #2a2924;
+    --ink: #f4f2ec; --ink-2: #b5b1a4; --ink-3: #8a867a;
+    --accent: #a78bfa; --accent-ink-on: #241b3f; --accent-track: #3c3467;
+    --blue: #3987e5; --good-text: #0ca30c; --wash: rgba(244, 242, 236, 0.05);
+  }
+  :root[data-theme="light"] {
+    --page: #f7f5f0; --card: #fdfcf9; --line: #e6e2d7; --line-soft: #efece3;
+    --ink: #171511; --ink-2: #57534a; --ink-3: #8a867a;
+    --accent: #7c3aed; --accent-ink-on: #ffffff; --accent-track: #ede9fe;
+    --blue: #2a78d6; --good-text: #006300; --wash: rgba(23, 21, 17, 0.04);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--page); color: var(--ink);
+    font-family: var(--sans); font-size: 14px; line-height: 1.45;
+    padding: 20px clamp(14px, 3vw, 36px) 40px;
+  }
+  button, input, select { font: inherit; color: inherit; }
+  h2 { font-size: 15px; margin: 0 0 4px; }
+  .sub { color: var(--ink-2); font-size: 13px; margin: 0 0 12px; }
+  header { display: flex; align-items: baseline; gap: 10px; padding-bottom: 14px; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
+  .wordmark { font-size: 19px; font-weight: 800; letter-spacing: -0.01em; }
+  .wordmark .tag { background: var(--accent); color: var(--accent-ink-on); font-size: 11px; font-weight: 800; letter-spacing: 0.08em; border-radius: 4px; padding: 2px 6px; margin-left: 6px; vertical-align: 2px; }
+  section { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; margin-bottom: 16px; }
+  .row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line-soft); flex-wrap: wrap; }
+  .row:last-child { border-bottom: none; }
+  .grow { flex: 1; min-width: 180px; }
+  .muted { color: var(--ink-3); font-size: 12px; }
+  .badge { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; padding: 2px 7px; border-radius: 5px; background: var(--wash); color: var(--ink-2); }
+  .badge.active { background: rgba(12, 163, 12, 0.12); color: var(--good-text); }
+  .badge.inactive { color: var(--ink-3); }
+  input[type=text], input[type=number], input[type=time], input[type=date], select, textarea {
+    background: var(--page); border: 1px solid var(--line); border-radius: 6px;
+    padding: 6px 9px; font-size: 13px; color: var(--ink);
+  }
+  button.btn {
+    background: none; border: 1px solid var(--line); border-radius: 7px;
+    padding: 6px 12px; cursor: pointer; color: var(--ink-2); font-size: 13px;
+  }
+  button.btn:hover { background: var(--wash); }
+  button.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink-on); font-weight: 700; }
+  button.btn.danger-txt { color: var(--critical); }
+  .edit-form { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px; background: var(--wash); border-radius: 8px; margin-top: 6px; width: 100%; }
+  .edit-form label { display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: var(--ink-3); }
+  .hours-row { display: grid; grid-template-columns: 44px 110px auto 110px 1fr; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--line-soft); }
+  .hours-row:last-child { border-bottom: none; }
+  .override-row { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding: 10px 12px; background: var(--wash); border-radius: 8px; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; }
+  .seg button { border: none; border-right: 1px solid var(--line); background: var(--card); padding: 6px 12px; font-size: 12px; cursor: pointer; color: var(--ink-2); }
+  .seg button:last-child { border-right: none; }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink-on); font-weight: 700; }
+  .toast { font-size: 12px; color: var(--good-text); margin-left: 8px; opacity: 0; transition: opacity 0.2s; }
+  .toast.show { opacity: 1; }
+  .cust-row { display: grid; grid-template-columns: 20px minmax(0, 1.1fr) minmax(0, 1.2fr) minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line-soft); }
+  .cust-row:last-child { border-bottom: none; }
+  .cust-row input[type=checkbox] { margin: 0; }
+  .cust-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cust-phone { font-family: var(--mono); font-size: 12px; color: var(--ink-2); }
+  .cust-vehicle { color: var(--ink-2); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cust-head { display: grid; grid-template-columns: 20px minmax(0, 1.1fr) minmax(0, 1.2fr) minmax(0, 1fr) auto; gap: 12px; padding: 0 0 6px; font-size: 11px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: var(--ink-3); border-bottom: 1px solid var(--line); margin-bottom: 2px; }
+  .overdue { color: #a15c00; font-size: 12px; }
+  :root[data-theme="dark"] .overdue { color: #e0a940; }
+  @media (prefers-color-scheme: dark) { .overdue { color: #e0a940; } }
+  .campaign-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; padding: 10px; background: var(--wash); border-radius: 8px; }
+  .upload-label { display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; height: 32px; border: 1px solid var(--line); border-radius: 7px; cursor: pointer; font-size: 13px; }
+  .progress-track { height: 6px; background: var(--wash); border-radius: 3px; overflow: hidden; margin-top: 4px; }
+  .progress-fill { height: 100%; width: 0%; background: var(--accent); }
+  .tl-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .tl-name { width: 80px; flex-shrink: 0; font-size: 13px; font-weight: 700; }
+  .tl-track { position: relative; flex: 1; height: 22px; background: var(--wash); border-radius: 5px; }
+  .tl-block { position: absolute; top: 0; bottom: 0; background: var(--accent); border-radius: 4px; display: flex; align-items: center; overflow: hidden; }
+  .tl-block span { font-size: 10px; color: var(--accent-ink-on); white-space: nowrap; padding: 0 5px; }
+  .tl-ticks { display: flex; margin: 0 0 6px 90px; font-size: 11px; color: var(--ink-3); }
+  .tl-ticks span { flex: 1; }
+  .legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: -1px; margin-right: 4px; }
+</style>
+
+<header>
+  <div class="wordmark">intuService<span class="tag">OWNER</span></div>
+</header>
+
+<section id="coupons-section">
+  <h2>Coupons and offers</h2>
+  <p class="sub">Shown to callers during a booking when they qualify. Category must match what the agent looks up (oil, brakes, batteries, ac, tires).</p>
+  <div id="coupons-list"></div>
+  <div class="row" style="border: none; padding-top: 12px;">
+    <button class="btn" id="add-coupon-btn">+ Add coupon</button>
+    <span class="toast" id="coupons-toast">Saved</span>
+  </div>
+</section>
+
+<section id="hours-section">
+  <h2>Active hours</h2>
+  <p class="sub">Outside these hours, callers see a callback request instead of the AI agent.</p>
+  <div id="hours-list"></div>
+  <div class="row" style="border: none; padding-top: 12px;">
+    <button class="btn primary" id="save-hours-btn">Save hours</button>
+    <span class="toast" id="hours-toast">Saved</span>
+  </div>
+  <div class="override-row">
+    <div>
+      <div style="font-weight: 700;">AI agent right now</div>
+      <div class="muted">Manual override — "auto" follows the schedule above</div>
+    </div>
+    <div class="seg" id="override-seg">
+      <button data-val="auto">auto</button>
+      <button data-val="on">force on</button>
+      <button data-val="off">force off</button>
+    </div>
+  </div>
+</section>
+
+<section id="overdue-section">
+  <h2>Customers due for a visit</h2>
+  <p class="sub">Illustrative — no visit in 6+ months. Select who to reach out to.</p>
+  <div id="overdue-list"></div>
+  <div class="campaign-bar">
+    <select id="overdue-offer" style="flex: 1; min-width: 160px;"></select>
+    <input type="time" id="overdue-time" value="14:00">
+    <button class="btn primary" id="overdue-send-btn">Send to selected (0)</button>
+    <span class="toast" id="overdue-toast">Sent (dummy — no real message goes out)</span>
+  </div>
+</section>
+
+<section id="tech-section">
+  <h2>Technician schedule</h2>
+  <p class="sub">Illustrative — technicians aren't tracked as their own record yet, this is a mock of the day view.</p>
+  <div class="row" style="border: none; padding-bottom: 10px;">
+    <input type="date" id="tech-date" value="2026-08-25">
+    <span class="muted">8:00 to 18:00</span>
+  </div>
+  <div class="tl-ticks"><span>8</span><span>10</span><span>12</span><span>14</span><span>16</span><span>18</span></div>
+  <div id="tech-timeline"></div>
+  <p class="muted" style="margin-top: 6px;">
+    <span class="legend-dot" style="background: var(--accent);"></span>booked
+    <span class="legend-dot" style="background: var(--wash); border: 1px solid var(--line);"></span>free
+  </p>
+</section>
+
+<section id="recall-section">
+  <h2>Vehicle recall calling</h2>
+  <p class="sub">Upload a list of affected vehicles. Mock only — no real file parsing or calls happen here.</p>
+  <div class="row" style="border: none; padding-bottom: 10px;">
+    <label class="upload-label">
+      <input type="file" id="recall-file" accept=".xlsx,.xls,.docx,.csv" style="display: none;">
+      Upload file
+    </label>
+    <span class="muted" id="recall-filename">No file uploaded · .xlsx, .docx or .csv</span>
+  </div>
+  <div id="recall-progress-wrap" style="display: none; margin-bottom: 10px;">
+    <div class="row" style="border: none; padding: 0;">
+      <span class="muted" id="recall-progress-label" style="flex: 1;">0 of 0 contacted</span>
+      <button class="btn" id="recall-start-btn">start calling</button>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="recall-progress-bar"></div></div>
+  </div>
+  <div id="recall-rows"></div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  function applyTheme(t) {
+    if (t === 'dark' || t === 'light') { document.documentElement.setAttribute('data-theme', t); }
+    else { document.documentElement.removeAttribute('data-theme'); }
+  }
+  try {
+    var p = new URLSearchParams(window.location.search).get('theme');
+    if (p) { applyTheme(p); }
+  } catch (e) { /* no-op */ }
+  window.addEventListener('message', function (e) {
+    if (e.data && e.data.type === 'intuservice-theme') { applyTheme(e.data.theme); }
+  });
+
+  var DB_URL = 'https://cpoxlwfvgtifgybjyvnm.supabase.co';
+  var DB_KEY = 'sb_publishable_BmJ4oJYthFcQhqW5B8d5eA_nDGUa738';
+  var db = window.supabase.createClient(DB_URL, DB_KEY);
+
+  var CATEGORIES = ['oil', 'brakes', 'batteries', 'ac', 'tires'];
+  var DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  function flashToast(id) {
+    var el = document.getElementById(id);
+    el.classList.add('show');
+    setTimeout(function () { el.classList.remove('show'); }, 1600);
+  }
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  /* ---------------- coupons ---------------- */
+  var coupons = [];
+  var editingId = null;
+
+  function couponRowHtml(c) {
+    if (editingId === c.id) {
+      return '' +
+        '<div class="row"><div class="grow"><strong>' + escapeHtml(c.headline) + '</strong></div></div>' +
+        '<div class="edit-form" data-id="' + c.id + '">' +
+          '<label>Headline<input type="text" class="f-headline" value="' + escapeHtml(c.headline) + '" style="width:200px"></label>' +
+          '<label>Title/terms shown<input type="text" class="f-title" value="' + escapeHtml(c.title) + '" style="width:260px"></label>' +
+          '<label>Code<input type="text" class="f-code" value="' + escapeHtml(c.code) + '" style="width:100px"></label>' +
+          '<label>Category<select class="f-category">' + CATEGORIES.map(function (cat) {
+            return '<option value="' + cat + '"' + (cat === c.category ? ' selected' : '') + '>' + cat + '</option>';
+          }).join('') + '</select></label>' +
+          '<label>Expires<input type="date" class="f-expires" value="' + escapeHtml(c.expires_on) + '"></label>' +
+          '<label>Sort<input type="number" class="f-sort" value="' + (c.sort == null ? 0 : c.sort) + '" style="width:60px"></label>' +
+          '<div style="display:flex;align-items:flex-end;gap:8px;">' +
+            '<button class="btn primary save-coupon">Save</button>' +
+            '<button class="btn cancel-edit">Cancel</button>' +
+          '</div>' +
+        '</div>';
+    }
+    return '' +
+      '<div class="row" data-id="' + c.id + '">' +
+        '<div class="grow">' +
+          '<div><strong>' + escapeHtml(c.headline) + '</strong> <span class="badge">' + escapeHtml(c.category) + '</span></div>' +
+          '<div class="muted">' + escapeHtml(c.title) + (c.code ? ' · code ' + escapeHtml(c.code) : '') + (c.expires_on ? ' · expires ' + escapeHtml(c.expires_on) : '') + '</div>' +
+        '</div>' +
+        '<button class="btn edit-coupon">Edit</button>' +
+        '<button class="btn toggle-active ' + (c.active ? '' : 'danger-txt') + '">' +
+          '<span class="badge ' + (c.active ? 'active' : 'inactive') + '">' + (c.active ? 'active' : 'off') + '</span>' +
+        '</button>' +
+        '<button class="btn danger-txt delete-coupon">Delete</button>' +
+      '</div>';
+  }
+
+  function renderCoupons() {
+    document.getElementById('coupons-list').innerHTML = coupons.map(couponRowHtml).join('');
+    Array.prototype.forEach.call(document.querySelectorAll('.edit-coupon'), function (btn) {
+      btn.addEventListener('click', function () {
+        editingId = btn.closest('.row').getAttribute('data-id');
+        renderCoupons();
+      });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('.cancel-edit'), function (btn) {
+      btn.addEventListener('click', function () { editingId = null; renderCoupons(); });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('.toggle-active'), function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.closest('.row').getAttribute('data-id');
+        var c = coupons.find(function (x) { return x.id === id; });
+        db.from('offers').update({ active: !c.active }).eq('id', id).then(function (res) {
+          if (!res.error) { c.active = !c.active; renderCoupons(); flashToast('coupons-toast'); }
+        });
+      });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('.delete-coupon'), function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.closest('.row').getAttribute('data-id');
+        var c = coupons.find(function (x) { return x.id === id; });
+        if (!window.confirm('Delete "' + c.headline + '"? This can\'t be undone.')) { return; }
+        db.from('offers').delete().eq('id', id).then(function (res) {
+          if (!res.error) {
+            coupons = coupons.filter(function (x) { return x.id !== id; });
+            renderCoupons();
+            flashToast('coupons-toast');
+          }
+        });
+      });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('.save-coupon'), function (btn) {
+      btn.addEventListener('click', function () {
+        var form = btn.closest('.edit-form');
+        var id = form.getAttribute('data-id');
+        var patch = {
+          headline: form.querySelector('.f-headline').value,
+          title: form.querySelector('.f-title').value,
+          code: form.querySelector('.f-code').value || null,
+          category: form.querySelector('.f-category').value,
+          expires_on: form.querySelector('.f-expires').value || null,
+          sort: parseInt(form.querySelector('.f-sort').value, 10) || 0
+        };
+        db.from('offers').update(patch).eq('id', id).then(function (res) {
+          if (!res.error) {
+            var c = coupons.find(function (x) { return x.id === id; });
+            Object.assign(c, patch);
+            editingId = null;
+            renderCoupons();
+            flashToast('coupons-toast');
+          }
+        });
+      });
+    });
+  }
+
+  document.getElementById('add-coupon-btn').addEventListener('click', function () {
+    db.from('offers').insert({
+      headline: 'New coupon', title: 'Edit me', category: CATEGORIES[0],
+      active: true, sort: coupons.length + 1
+    }).select().then(function (res) {
+      if (!res.error && res.data && res.data[0]) {
+        coupons.push(res.data[0]);
+        editingId = res.data[0].id;
+        renderCoupons();
+      }
+    });
+  });
+
+  db.from('offers').select('*').order('category').order('sort').then(function (res) {
+    if (res.data) { coupons = res.data; renderCoupons(); }
+  });
+
+  /* ---------------- active hours ---------------- */
+  var hours = [];
+
+  function renderHours() {
+    var ordered = hours.slice().sort(function (a, b) { return a.day_of_week - b.day_of_week; });
+    document.getElementById('hours-list').innerHTML = ordered.map(function (h) {
+      return '' +
+        '<div class="hours-row" data-day="' + h.day_of_week + '">' +
+          '<span>' + DAY_NAMES[h.day_of_week] + '</span>' +
+          '<input type="time" class="h-open" value="' + (h.open_time || '') + '" ' + (h.closed ? 'disabled' : '') + '>' +
+          '<span class="muted">to</span>' +
+          '<input type="time" class="h-close" value="' + (h.close_time || '') + '" ' + (h.closed ? 'disabled' : '') + '>' +
+          '<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-2)"><input type="checkbox" class="h-closed" ' + (h.closed ? 'checked' : '') + '> closed</label>' +
+        '</div>';
+    }).join('');
+    Array.prototype.forEach.call(document.querySelectorAll('.h-closed'), function (cb) {
+      cb.addEventListener('change', function () {
+        var row = cb.closest('.hours-row');
+        row.querySelector('.h-open').disabled = cb.checked;
+        row.querySelector('.h-close').disabled = cb.checked;
+      });
+    });
+  }
+
+  document.getElementById('save-hours-btn').addEventListener('click', function () {
+    var rows = document.querySelectorAll('.hours-row');
+    var updates = Array.prototype.map.call(rows, function (row) {
+      var day = parseInt(row.getAttribute('data-day'), 10);
+      var closed = row.querySelector('.h-closed').checked;
+      return db.from('store_hours').update({
+        open_time: closed ? null : row.querySelector('.h-open').value || null,
+        close_time: closed ? null : row.querySelector('.h-close').value || null,
+        closed: closed
+      }).eq('day_of_week', day);
+    });
+    Promise.all(updates).then(function () { flashToast('hours-toast'); });
+  });
+
+  db.from('store_hours').select('*').then(function (res) {
+    if (res.data) { hours = res.data; renderHours(); }
+  });
+
+  /* ---------------- manual override ---------------- */
+  function setOverrideUi(val) {
+    Array.prototype.forEach.call(document.querySelectorAll('#override-seg button'), function (btn) {
+      btn.setAttribute('aria-pressed', btn.getAttribute('data-val') === val ? 'true' : 'false');
+    });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('#override-seg button'), function (btn) {
+    btn.addEventListener('click', function () {
+      var val = btn.getAttribute('data-val');
+      db.from('store_settings').update({ ai_override: val }).eq('id', true).then(function (res) {
+        if (!res.error) { setOverrideUi(val); }
+      });
+    });
+  });
+  db.from('store_settings').select('*').eq('id', true).then(function (res) {
+    if (res.data && res.data[0]) { setOverrideUi(res.data[0].ai_override); }
+  });
+
+  /* ---------------- customers due for a visit (dummy) ---------------- */
+  var DUMMY_OVERDUE = [
+    { customer: 'Rae Chen', phone: '+1 512-555-0142', vehicle: '2019 Civic', monthsAgoLabel: '7 months ago' },
+    { customer: 'J. Alvarez', phone: '+1 512-555-0187', vehicle: '2016 F-150', monthsAgoLabel: '9 months ago' },
+    { customer: 'P. Osei', phone: '+1 737-555-0116', vehicle: '2021 CR-V', monthsAgoLabel: '6 months ago' },
+    { customer: 'Dana Whitfield', phone: '+1 512-555-0193', vehicle: '2018 Malibu', monthsAgoLabel: '8 months ago' },
+    { customer: 'Marcus Lee', phone: '+1 737-555-0124', vehicle: '2020 RAV4', monthsAgoLabel: '11 months ago' },
+    { customer: 'S. Kowalski', phone: '+1 512-555-0169', vehicle: '2017 Wrangler', monthsAgoLabel: '6 months ago' }
+  ];
+
+  function renderOverdue(list) {
+    var header = '<div class="cust-head"><span></span><span>Customer</span><span>Phone</span><span>Vehicle</span><span>Last visit</span></div>';
+    var rows = list.map(function (c, i) {
+      return '' +
+        '<label class="cust-row">' +
+          '<input type="checkbox" class="overdue-check" data-i="' + i + '">' +
+          '<span class="cust-name">' + escapeHtml(c.customer) + '</span>' +
+          '<span class="cust-phone">' + escapeHtml(c.phone) + '</span>' +
+          '<span class="cust-vehicle">' + escapeHtml(c.vehicle) + '</span>' +
+          '<span class="overdue">' + c.monthsAgoLabel + '</span>' +
+        '</label>';
+    }).join('');
+    document.getElementById('overdue-list').innerHTML = rows
+      ? header + rows
+      : '<p class="muted">No customers overdue right now — everyone has visited in the last 6 months.</p>';
+    Array.prototype.forEach.call(document.querySelectorAll('.overdue-check'), function (cb) {
+      cb.addEventListener('change', updateOverdueCount);
+    });
+    updateOverdueCount();
+  }
+  function updateOverdueCount() {
+    var n = document.querySelectorAll('.overdue-check:checked').length;
+    document.getElementById('overdue-send-btn').textContent = 'Send to selected (' + n + ')';
+  }
+  document.getElementById('overdue-send-btn').addEventListener('click', function () {
+    flashToast('overdue-toast');
+  });
+
+  renderOverdue(DUMMY_OVERDUE);
+
+  db.from('offers').select('headline').eq('active', true).then(function (res) {
+    var opts = (res.data || []).map(function (o) { return o.headline; });
+    if (!opts.length) { opts = ['15% off next visit']; }
+    document.getElementById('overdue-offer').innerHTML = opts.map(function (h) {
+      return '<option>' + escapeHtml(h) + '</option>';
+    }).join('');
+  });
+
+  /* ---------------- technician schedule (dummy) ---------------- */
+  var DAY_START = 8, DAY_END = 18;
+  function pctFor(hour) { return ((hour - DAY_START) / (DAY_END - DAY_START)) * 100; }
+  var TECHS = [
+    { name: 'Mike R.', blocks: [[8, 9.5, 'Oil change'], [11, 12.5, 'Brake job'], [14, 16, 'Diagnostic']] },
+    { name: 'Dana P.', blocks: [[9, 10, 'Tire rotation'], [13, 14.5, 'AC service']] },
+    { name: 'Sam K.', blocks: [[8, 11, 'Transmission'], [11.5, 15, 'Engine repair'], [15.5, 18, 'Alignment']] }
+  ];
+  document.getElementById('tech-timeline').innerHTML = TECHS.map(function (t) {
+    return '' +
+      '<div class="tl-row">' +
+        '<span class="tl-name">' + escapeHtml(t.name) + '</span>' +
+        '<div class="tl-track">' + t.blocks.map(function (b) {
+          return '<div class="tl-block" style="left:' + pctFor(b[0]) + '%;width:' + (pctFor(b[1]) - pctFor(b[0])) + '%;" title="' + escapeHtml(b[2]) + '"><span>' + escapeHtml(b[2]) + '</span></div>';
+        }).join('') + '</div>' +
+      '</div>';
+  }).join('');
+
+  /* ---------------- vehicle recall calling (dummy) ---------------- */
+  var RECALL_OWNERS = [
+    ['Grace Kim', '2015 Odyssey', 'Airbag inflator'],
+    ['T. Nguyen', '2015 Odyssey', 'Airbag inflator'],
+    ['B. Whitfield', '2014 Odyssey', 'Airbag inflator'],
+    ['Lena Ortiz', '2015 Pilot', 'Airbag inflator']
+  ];
+  var STATUS_STYLE = { queued: 'var(--ink-3)', calling: 'var(--accent)', reached: 'var(--good-text)', 'no answer': '#a15c00' };
+  var recallState = [];
+
+  function renderRecall() {
+    document.getElementById('recall-rows').innerHTML = recallState.map(function (r) {
+      return '' +
+        '<div class="cust-row">' +
+          '<span class="grow">' + escapeHtml(r.name) + ' <span class="muted">· ' + escapeHtml(r.vehicle) + ' · ' + escapeHtml(r.reason) + '</span></span>' +
+          '<span style="font-size:13px;font-weight:700;color:' + STATUS_STYLE[r.status] + '">' + r.status + (r.status === 'calling' ? '…' : '') + '</span>' +
+        '</div>';
+    }).join('');
+    var done = recallState.filter(function (r) { return r.status === 'reached' || r.status === 'no answer'; }).length;
+    document.getElementById('recall-progress-label').textContent = done + ' of ' + recallState.length + ' contacted';
+    document.getElementById('recall-progress-bar').style.width = (recallState.length ? done / recallState.length * 100 : 0) + '%';
+  }
+  document.getElementById('recall-file').addEventListener('change', function (e) {
+    var f = e.target.files[0];
+    document.getElementById('recall-filename').textContent = f ? f.name : 'No file uploaded · .xlsx, .docx or .csv';
+    recallState = RECALL_OWNERS.map(function (o) { return { name: o[0], vehicle: o[1], reason: o[2], status: 'queued' }; });
+    document.getElementById('recall-progress-wrap').style.display = 'block';
+    renderRecall();
+  });
+  var recallTimer = null;
+  document.getElementById('recall-start-btn').addEventListener('click', function () {
+    var btn = this;
+    if (recallTimer) { clearInterval(recallTimer); recallTimer = null; btn.textContent = 'start calling'; return; }
+    btn.textContent = 'pause';
+    var i = recallState.findIndex(function (r) { return r.status === 'queued'; });
+    recallTimer = setInterval(function () {
+      if (i >= recallState.length) { clearInterval(recallTimer); recallTimer = null; btn.textContent = 'start calling'; return; }
+      if (recallState[i].status === 'queued') {
+        recallState[i].status = 'calling'; renderRecall();
+      } else {
+        recallState[i].status = Math.random() > 0.3 ? 'reached' : 'no answer';
+        renderRecall(); i++;
+      }
+    }, 700);
+  });
+})();
+</script>
+</html>

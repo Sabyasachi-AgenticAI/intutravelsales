@@ -1,0 +1,5 @@
+.vercel
+
+# Claude Code local session state (not shared project config)
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
