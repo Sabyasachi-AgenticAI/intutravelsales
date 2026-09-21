@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Mic, MicOff, PhoneOff } from 'lucide-react';
+import { Mic, MicOff, PhoneOff, Volume2, VolumeX } from 'lucide-react';
 import {
   RoomAudioRenderer,
   SessionProvider,
   useAgent,
   useEnsureRoom,
   useLocalParticipant,
+  useRoomContext,
   useSession,
   useSessionContext,
   useStartAudio,
@@ -44,22 +45,73 @@ const EQ_BARS = [
 
 /**
  * IMPORTANT: `useSession()` (and the `SessionProvider` tree under it) is only
- * mounted once the visitor explicitly clicks "Start a live call". LiveKit's
- * client begins pre-connect audio buffering — and requests the microphone —
- * as soon as that hook mounts, which would otherwise mean every visitor who
- * merely scrolls past this section on a public marketing page silently
- * dispatches a real, billed agent session. Gating the mount on a click keeps
- * that behind genuine intent, the same trust boundary the main app has via
- * its Welcome screen.
+ * mounted once the visitor explicitly clicks "Start a live call" AND agrees to
+ * the recording-consent notice below. LiveKit's client begins pre-connect
+ * audio buffering — and requests the microphone — as soon as that hook
+ * mounts, which would otherwise mean every visitor who merely scrolls past
+ * this section on a public marketing page silently dispatches a real, billed
+ * agent session. Gating the mount on explicit consent keeps that behind
+ * genuine, informed intent, the same trust boundary the main app has via its
+ * Welcome screen.
  */
 export function VoiceDemo({ agentName }: { agentName: string }) {
   const [started, setStarted] = useState(false);
+  const [consentOpen, setConsentOpen] = useState(false);
 
-  if (!started) {
-    return <VoiceDemoPoster onStart={() => setStarted(true)} />;
+  if (started) {
+    return <VoiceDemoSession agentName={agentName} />;
   }
 
-  return <VoiceDemoSession agentName={agentName} />;
+  return (
+    <>
+      <VoiceDemoPoster onStart={() => setConsentOpen(true)} />
+      {consentOpen && (
+        <ConsentModal
+          onAgree={() => {
+            setConsentOpen(false);
+            setStarted(true);
+          }}
+          onCancel={() => setConsentOpen(false)}
+        />
+      )}
+    </>
+  );
+}
+
+function ConsentModal({ onAgree, onCancel }: { onAgree: () => void; onCancel: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 px-4 py-10 backdrop-blur-sm"
+      onClick={onCancel}
+    >
+      <div
+        className="w-full max-w-[440px] rounded-[var(--radius)] border border-[var(--line-strong)] bg-[var(--ground-soft)] p-7 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.6)]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="eyebrow">Terms and conditions</div>
+        <p className="mt-4 text-[13.5px] leading-relaxed text-[var(--ink-dim)]">
+          By clicking &quot;Agree,&quot; and each time I interact with this AI agent, I consent
+          to the recording, storage, and sharing of my communications with third-party service
+          providers, and as described in the Privacy Policy. If you do not wish to have your
+          conversations recorded, please refrain from using this service.
+        </p>
+        <div className="mt-6 flex gap-3">
+          <button
+            onClick={onCancel}
+            className="flex-1 rounded-full border border-[var(--line-strong)] py-3 text-[13.5px] font-semibold text-[var(--ink)] transition-colors hover:bg-[var(--surface-hover)]"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onAgree}
+            className="flex-1 rounded-full bg-gradient-to-r from-[var(--violet)] to-[var(--magenta)] py-3 text-[13.5px] font-semibold text-white shadow-[0_10px_28px_-8px_rgba(236,72,153,0.55)] transition-all hover:-translate-y-0.5"
+          >
+            Agree
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function VoiceDemoSession({ agentName }: { agentName: string }) {
@@ -90,85 +142,167 @@ function StartAudioFallback() {
 
 function CardShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="w-full max-w-[420px] overflow-hidden rounded-[var(--radius)] border border-[var(--line-strong)] bg-[var(--ground-soft)]/90 shadow-[0_40px_90px_-30px_rgba(0,0,0,0.75)] backdrop-blur-xl">
+    <div className="relative w-full max-w-[400px] overflow-hidden rounded-[var(--radius)] border border-[var(--line-strong)] bg-[var(--ground-soft)]/90 px-8 pt-8 pb-7 text-center shadow-[0_40px_90px_-30px_rgba(0,0,0,0.75)] backdrop-blur-xl">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10"
+        style={{
+          background:
+            'radial-gradient(60% 50% at 50% 0%, var(--violet-bg), transparent), radial-gradient(50% 40% at 100% 100%, var(--magenta-bg), transparent)',
+        }}
+      />
       {children}
     </div>
   );
 }
 
-function CardHeader({ statusLabel, isLive }: { statusLabel: string; isLive: boolean }) {
+function StatusPill({ statusLabel, isLive }: { statusLabel: string; isLive: boolean }) {
   return (
-    <div className="relative px-7 pt-5 pb-2">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 opacity-40"
+    <span
+      className="absolute top-5 right-5 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-[family-name:var(--font-data)] text-[9.5px] tracking-[0.06em] uppercase"
+      style={
+        isLive
+          ? { color: '#cfe9d8', background: 'rgba(52,211,153,0.12)', borderColor: 'rgba(52,211,153,0.3)' }
+          : { color: 'var(--ink-dim)', background: 'var(--surface)', borderColor: 'var(--line)' }
+      }
+    >
+      <span
+        className="h-1.5 w-1.5 rounded-full"
         style={{
-          background:
-            'radial-gradient(70% 70% at 20% 0%, var(--violet-bg), transparent), radial-gradient(70% 70% at 90% 0%, var(--magenta-bg), transparent)',
+          background: isLive ? 'var(--good)' : 'var(--ink-faint)',
+          animationName: isLive ? 'pulse-dot' : 'none',
+          animationDuration: '1.8s',
+          animationTimingFunction: 'ease-in-out',
+          animationIterationCount: 'infinite',
         }}
       />
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-[13px] bg-gradient-to-br from-[var(--violet)] to-[var(--magenta)] text-[16px] font-bold text-white shadow-[0_6px_18px_-6px_rgba(124,58,237,0.7)]">
-            J
-          </div>
-          <div>
-            <div className="text-[15px] font-bold text-[var(--ink)]">Jacqueline</div>
-            <div className="font-[family-name:var(--font-data)] text-[10.5px] tracking-[0.05em] text-[var(--ink-faint)] uppercase">
-              AI Service Advisor
-            </div>
-          </div>
-        </div>
-        <span
-          className="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 font-[family-name:var(--font-data)] text-[10.5px] tracking-[0.08em] uppercase"
-          style={
-            isLive
-              ? {
-                  color: '#cfe9d8',
-                  background: 'rgba(52,211,153,0.12)',
-                  borderColor: 'rgba(52,211,153,0.3)',
-                }
-              : {
-                  color: 'var(--ink-dim)',
-                  background: 'var(--surface)',
-                  borderColor: 'var(--line)',
-                }
-          }
-        >
-          {isLive && (
+      {statusLabel}
+    </span>
+  );
+}
+
+// A centered "voice orb" — a dashed ring slowly rotating around a soft glass
+// circle, with a compact waveform inside — reads as a single focal object
+// instead of a name row and a separate visualizer panel stacked on top of
+// each other. Inspired by autoleap.com/air's receptionist widget, restyled
+// in our own dark, multi-hue palette rather than copied wholesale.
+function VoiceOrb({ isLive }: { isLive: boolean }) {
+  return (
+    <div className="relative mx-auto flex h-[128px] w-[128px] items-center justify-center">
+      <div
+        className="absolute inset-0 rounded-full border-2 border-dashed"
+        style={{ borderColor: 'var(--violet-soft)', opacity: 0.5, animation: 'spin 14s linear infinite' }}
+      />
+      <div
+        aria-hidden
+        className="absolute inset-3 rounded-full blur-lg"
+        style={{ background: 'radial-gradient(circle, var(--violet-bg), transparent 70%)' }}
+      />
+      <div className="relative flex h-[96px] w-[96px] items-center justify-center rounded-full border border-[var(--line-strong)] bg-gradient-to-br from-[var(--violet-bg)] to-[var(--magenta-bg)]">
+        <div className="flex h-[30px] items-end justify-center gap-[3px]">
+          {EQ_BARS.slice(0, 7).map((bar, i) => (
             <span
-              className="h-1.5 w-1.5 rounded-full bg-[var(--good)]"
-              style={{ animationName: 'pulse-dot', animationDuration: '1.8s', animationTimingFunction: 'ease-in-out', animationIterationCount: 'infinite' }}
+              key={i}
+              className="w-[3.5px] rounded-full"
+              style={{
+                height: `${bar.h}%`,
+                background: bar.c,
+                animationName: isLive ? 'eq-bar' : 'none',
+                animationDuration: '1.1s',
+                animationTimingFunction: 'ease-in-out',
+                animationIterationCount: 'infinite',
+                animationDelay: `${-i * 0.12}s`,
+                opacity: isLive ? 1 : 0.35,
+                transform: isLive ? undefined : 'scaleY(0.4)',
+                transition: 'opacity 0.3s ease',
+              }}
             />
-          )}
-          {statusLabel}
-        </span>
+          ))}
+        </div>
       </div>
     </div>
   );
 }
 
-function Equalizer({ isLive }: { isLive: boolean }) {
+function VoiceCardBody({ statusLabel, isLive }: { statusLabel: string; isLive: boolean }) {
   return (
-    <div className="flex h-[92px] items-center justify-center gap-[5px]">
-      {EQ_BARS.map((bar, i) => (
-        <span
-          key={i}
-          className="w-[5px] rounded-full"
-          style={{
-            height: `${bar.h}%`,
-            background: bar.c,
-            animationName: isLive ? 'eq-bar' : 'none',
-            animationDuration: '1.1s',
-            animationTimingFunction: 'ease-in-out',
-            animationIterationCount: 'infinite',
-            animationDelay: `${-i * 0.12}s`,
-            opacity: isLive ? 1 : 0.25,
-            transform: isLive ? undefined : 'scaleY(0.35)',
-            transition: 'opacity 0.3s ease',
-          }}
-        />
-      ))}
+    <>
+      <StatusPill statusLabel={statusLabel} isLive={isLive} />
+      <VoiceOrb isLive={isLive} />
+      <div className="mt-5 text-[18px] font-bold text-[var(--ink)]">Jacqueline</div>
+      <div className="mt-0.5 font-[family-name:var(--font-data)] text-[10.5px] tracking-[0.06em] text-[var(--ink-faint)] uppercase">
+        AI Service Advisor
+      </div>
+    </>
+  );
+}
+
+// Counts up from 00:00 as soon as the call becomes active, and resets
+// whenever it isn't — mirrors a phone app's in-call duration readout.
+function CallTimer({ active }: { active: boolean }) {
+  const [elapsedS, setElapsedS] = useState(0);
+
+  useEffect(() => {
+    if (!active) {
+      setElapsedS(0);
+      return;
+    }
+    const startedAt = Date.now();
+    setElapsedS(0);
+    const id = setInterval(() => {
+      setElapsedS(Math.floor((Date.now() - startedAt) / 1000));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [active]);
+
+  const mm = String(Math.floor(elapsedS / 60)).padStart(2, '0');
+  const ss = String(elapsedS % 60).padStart(2, '0');
+
+  return (
+    <div className="font-[family-name:var(--font-data)] text-[13px] tracking-[0.05em] text-[var(--ink-dim)]">
+      {mm}:{ss}
+    </div>
+  );
+}
+
+// Pill-shaped in-call control bar — mic mute, speaker mute, and end call —
+// inspired by the reference call-widget's layout, in our own dark palette.
+function CallControlBar({
+  isMicrophoneEnabled,
+  onToggleMic,
+  isSpeakerEnabled,
+  onToggleSpeaker,
+  onEnd,
+}: {
+  isMicrophoneEnabled: boolean;
+  onToggleMic: () => void;
+  isSpeakerEnabled: boolean;
+  onToggleSpeaker: () => void;
+  onEnd: () => void;
+}) {
+  return (
+    <div className="mt-3 flex items-center justify-center gap-1.5 rounded-full border border-[var(--line-strong)] bg-[var(--surface)] p-1.5">
+      <button
+        onClick={onToggleMic}
+        aria-label={isMicrophoneEnabled ? 'Mute microphone' : 'Unmute microphone'}
+        className="flex h-11 w-11 items-center justify-center rounded-full text-[var(--ink)] transition-colors hover:bg-[var(--surface-hover)]"
+      >
+        {isMicrophoneEnabled ? <Mic size={18} /> : <MicOff size={18} />}
+      </button>
+      <button
+        onClick={onToggleSpeaker}
+        aria-label={isSpeakerEnabled ? 'Mute speaker' : 'Unmute speaker'}
+        className="flex h-11 w-11 items-center justify-center rounded-full text-[var(--ink)] transition-colors hover:bg-[var(--surface-hover)]"
+      >
+        {isSpeakerEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
+      </button>
+      <button
+        onClick={onEnd}
+        aria-label="End call"
+        className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--coral)] text-white transition-colors hover:bg-[#ff8163]"
+      >
+        <PhoneOff size={18} />
+      </button>
     </div>
   );
 }
@@ -177,17 +311,16 @@ function Equalizer({ isLive }: { isLive: boolean }) {
 function VoiceDemoPoster({ onStart }: { onStart: () => void }) {
   return (
     <CardShell>
-      <CardHeader statusLabel="Ready when you are" isLive={false} />
-      <Equalizer isLive={false} />
-      <div className="px-7 pb-7">
+      <VoiceCardBody statusLabel="Available" isLive={false} />
+      <div className="mt-6">
         <button
           onClick={onStart}
-          className="flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[var(--violet)] to-[var(--magenta)] py-3.5 text-[14px] font-semibold text-white shadow-[0_10px_28px_-8px_rgba(236,72,153,0.55)] transition-all hover:-translate-y-0.5 hover:shadow-[0_14px_32px_-8px_rgba(236,72,153,0.7)]"
+          className="flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[var(--violet)] to-[var(--magenta)] py-3.5 text-[14.5px] font-semibold text-white shadow-[0_10px_28px_-8px_rgba(236,72,153,0.55)] transition-all hover:-translate-y-0.5 hover:shadow-[0_14px_32px_-8px_rgba(236,72,153,0.7)]"
         >
           Start a live call
         </button>
-        <p className="mt-4 text-center font-[family-name:var(--font-data)] text-[11px] text-[var(--ink-faint)]">
-          Uses your microphone for this call only — nothing is saved beyond the demo.
+        <p className="mt-3.5 text-center text-[12.5px] text-[var(--ink-faint)]">
+          Tap to talk — Jacqueline picks up instantly.
         </p>
       </div>
     </CardShell>
@@ -198,8 +331,10 @@ function VoiceDemoCard({ autoStart }: { autoStart?: boolean }) {
   const { isConnected, start, end } = useSessionContext();
   const agent = useAgent();
   const { isMicrophoneEnabled, localParticipant } = useLocalParticipant();
+  const room = useRoomContext();
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSpeakerEnabled, setIsSpeakerEnabled] = useState(true);
 
   const active = isConnected && agent.state !== 'failed';
   const statusLabel = active ? (STATUS_COPY[agent.state] ?? 'Connected') : STATUS_COPY.idle;
@@ -232,50 +367,47 @@ function VoiceDemoCard({ autoStart }: { autoStart?: boolean }) {
     localParticipant.setMicrophoneEnabled(!isMicrophoneEnabled).catch(console.error);
   };
 
+  const toggleSpeaker = () => {
+    const next = !isSpeakerEnabled;
+    setIsSpeakerEnabled(next);
+    room.remoteParticipants.forEach((participant) => {
+      participant.setVolume(next ? 1 : 0);
+    });
+  };
+
   const handleEnd = async () => {
     await end();
   };
 
   return (
     <CardShell>
-      <CardHeader statusLabel={starting ? 'Connecting…' : statusLabel} isLive={isLive} />
-      <Equalizer isLive={isLive} />
+      <VoiceCardBody statusLabel={starting ? 'Connecting…' : statusLabel} isLive={isLive} />
 
-      <div className="px-7 pb-7">
+      <div className="mt-6">
         {error && <p className="mb-3 text-center text-[12.5px] text-red-400">{error}</p>}
 
         {!active ? (
           <button
             onClick={handleStart}
             disabled={starting}
-            className="flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[var(--violet)] to-[var(--magenta)] py-3.5 text-[14px] font-semibold text-white shadow-[0_10px_28px_-8px_rgba(236,72,153,0.55)] transition-all hover:-translate-y-0.5 hover:shadow-[0_14px_32px_-8px_rgba(236,72,153,0.7)] disabled:pointer-events-none disabled:opacity-60"
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[var(--violet)] to-[var(--magenta)] py-3.5 text-[14.5px] font-semibold text-white shadow-[0_10px_28px_-8px_rgba(236,72,153,0.55)] transition-all hover:-translate-y-0.5 hover:shadow-[0_14px_32px_-8px_rgba(236,72,153,0.7)] disabled:pointer-events-none disabled:opacity-60"
           >
             {starting ? 'Connecting…' : 'Retry'}
           </button>
         ) : (
-          <div className="flex items-center justify-center gap-3">
-            <button
-              onClick={toggleMic}
-              className="flex h-12 w-12 items-center justify-center rounded-full border border-[var(--line-strong)] text-[var(--ink)] transition-colors hover:bg-[var(--surface-hover)]"
-              aria-label={isMicrophoneEnabled ? 'Mute microphone' : 'Unmute microphone'}
-            >
-              {isMicrophoneEnabled ? <Mic size={18} /> : <MicOff size={18} />}
-            </button>
-            <button
-              onClick={handleEnd}
-              className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-[var(--coral)] text-[14px] font-semibold text-white transition-colors hover:bg-[#ff8163]"
-            >
-              <PhoneOff size={16} />
-              End call
-            </button>
+          <div className="flex flex-col items-center">
+            <CallTimer active={active} />
+            <CallControlBar
+              isMicrophoneEnabled={isMicrophoneEnabled}
+              onToggleMic={toggleMic}
+              isSpeakerEnabled={isSpeakerEnabled}
+              onToggleSpeaker={toggleSpeaker}
+              onEnd={handleEnd}
+            />
           </div>
         )}
 
         <StartAudioFallback />
-
-        <p className="mt-4 text-center font-[family-name:var(--font-data)] text-[11px] text-[var(--ink-faint)]">
-          Uses your microphone for this call only — nothing is saved beyond the demo.
-        </p>
       </div>
     </CardShell>
   );

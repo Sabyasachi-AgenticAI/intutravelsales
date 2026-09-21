@@ -25,8 +25,7 @@ export function FinalCTA() {
       />
       <Container>
         <Reveal>
-          <div className="eyebrow justify-center">Stage 1</div>
-          <h2 className="mx-auto mt-5 max-w-[720px] text-[2.2rem] font-extrabold tracking-tight text-[var(--ink)] sm:text-[2.75rem]">
+          <h2 className="mx-auto max-w-[720px] text-[2.2rem] font-extrabold tracking-tight text-[var(--ink)] sm:text-[2.75rem]">
             Stop losing customers to a ringing phone.
           </h2>
           <p className="mx-auto mt-4 max-w-[500px] text-[16px] text-[var(--ink-dim)]">

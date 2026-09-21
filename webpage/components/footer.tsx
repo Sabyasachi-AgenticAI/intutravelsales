@@ -1,5 +1,6 @@
+'use client';
+
 import {
-  CONTACT_ADDRESS,
   CONTACT_EMAIL,
   CONTACT_MAILTO,
   CONTACT_PHONE_DISPLAY,
@@ -9,6 +10,7 @@ import {
   WEBSITE_URL,
 } from '@/lib/contact';
 import { Container } from './container';
+import { useDemoModal } from './demo-modal';
 import { Wordmark } from './wordmark';
 
 // Official LinkedIn "in" logo mark (brand blue square + white glyph),
@@ -52,6 +54,8 @@ const COLUMNS = [
 ];
 
 export function Footer() {
+  const { open } = useDemoModal();
+
   return (
     <footer className="bg-black/35 py-16 text-[var(--ink-faint)]">
       <Container>
@@ -62,17 +66,17 @@ export function Footer() {
               Agentic AI Service Advisor for auto repair shops — part of the AI Operating System
               for Garage Management Solutions.
             </p>
-            <div className="mt-3 flex flex-col gap-1 font-[family-name:var(--font-data)] text-[11.5px] tracking-[0.04em] text-[var(--ink-faint)] uppercase">
+            <div className="mt-3 flex flex-col gap-1 text-[13.5px] text-[var(--ink-faint)]">
               <a href={WEBSITE_URL} target="_blank" rel="noopener noreferrer" className="w-fit transition-colors hover:text-[var(--ink)]">
                 {WEBSITE_DISPLAY}
               </a>
               <a href={CONTACT_TEL} className="w-fit transition-colors hover:text-[var(--ink)]">
                 Call: {CONTACT_PHONE_DISPLAY}
               </a>
-              <a href={CONTACT_MAILTO} className="w-fit normal-case transition-colors hover:text-[var(--ink)]">
+              <a href={CONTACT_MAILTO} className="w-fit transition-colors hover:text-[var(--ink)]">
                 Email: {CONTACT_EMAIL}
               </a>
-              <span>{CONTACT_ADDRESS}</span>
+              <span>6311 Haggerty rd, west bloomfield, MI 48322, USA</span>
             </div>
             <a
               href={LINKEDIN_URL}
@@ -90,33 +94,33 @@ export function Footer() {
                 {col.title}
               </h4>
               <ul className="space-y-2.5">
-                {col.links.map((l) => (
-                  <li key={l.label}>
-                    <a
-                      href={l.href}
-                      className="text-[13.5px] text-[var(--ink-dim)] transition-colors hover:text-[var(--ink)]"
-                    >
-                      {l.label}
-                    </a>
-                  </li>
-                ))}
+                {col.links.map((l) =>
+                  l.label === 'Contact' ? (
+                    <li key={l.label}>
+                      <button
+                        onClick={() => open('demo')}
+                        className="text-[13.5px] text-[var(--ink-dim)] transition-colors hover:text-[var(--ink)]"
+                      >
+                        {l.label}
+                      </button>
+                    </li>
+                  ) : (
+                    <li key={l.label}>
+                      <a
+                        href={l.href}
+                        className="text-[13.5px] text-[var(--ink-dim)] transition-colors hover:text-[var(--ink)]"
+                      >
+                        {l.label}
+                      </a>
+                    </li>
+                  )
+                )}
               </ul>
             </div>
           ))}
         </div>
-        <div className="flex flex-wrap justify-between gap-3 pt-6 text-[12px]">
+        <div className="pt-6 text-[12px]">
           <span>© intuService {new Date().getFullYear()}. All rights reserved.</span>
-          <span className="flex flex-wrap gap-x-2">
-            <span>{CONTACT_ADDRESS}</span>
-            <span aria-hidden>·</span>
-            <a href={CONTACT_TEL} className="transition-colors hover:text-[var(--ink)]">
-              {CONTACT_PHONE_DISPLAY}
-            </a>
-            <span aria-hidden>·</span>
-            <a href={CONTACT_MAILTO} className="transition-colors hover:text-[var(--ink)]">
-              contact@originalix.io
-            </a>
-          </span>
         </div>
       </Container>
     </footer>

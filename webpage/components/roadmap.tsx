@@ -29,7 +29,7 @@ export function Roadmap() {
       />
       <Container>
         <Reveal className="max-w-[640px]">
-          <div className="eyebrow">Coming to the Platform</div>
+          <div className="eyebrow">The Platform</div>
           <h2 className="mt-4 text-[2rem] font-extrabold tracking-tight text-[var(--ink)] sm:text-[2.5rem]">
             The AI Service Advisor is Stage 1.
           </h2>
